@@ -2,7 +2,7 @@
 
 A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fully async/await, cache support, and ergonomic request building.
 
----
+
 
 ## Features
 - Actor-isolated for safe concurrency (Swift 6 actors)
@@ -13,13 +13,13 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fu
 - Automatic URL normalization
 - Simple, ergonomic API for all HTTP verbs
 
----
+
 
 ## Requirements
 - Swift 5.9 or later
 - iOS 15+ / macOS 12+
 
----
+
 
 ## Installation
 
@@ -33,7 +33,7 @@ Add the following to your Package.swift dependencies:
 
 Or via Xcode: File > Add Packages... and search for this repository URL.
 
----
+
 
 ## Basic Usage
 
@@ -85,7 +85,7 @@ let result = await client.get("/things", queryItems: ["page": "1", "q": "foo"], 
 let result = await client.get("/me", headers: ["Authorization": "Bearer TOKEN"])
 ```
 
----
+
 
 ## Advanced Usage
 
@@ -117,7 +117,7 @@ let client = HTTPClient(host: "api.example.com", commonHeaders: [
 ])
 ```
 
----
+
 
 ## Testing
 
@@ -127,13 +127,13 @@ You can run tests with:
 
 swift test
 
----
+
 
 ## License
 
 MIT. See LICENSE for details.
 
----
+
 
 ## Credits
 
