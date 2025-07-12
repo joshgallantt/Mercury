@@ -1,3 +1,4 @@
+<div align="center">
 # SwiftHTTPClient
 
 <!-- Swift version badge -->
@@ -11,7 +12,7 @@
 
 <!-- License badge -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-
+</div>
 
 A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fully async/await, cache support, and ergonomic request building.
 
