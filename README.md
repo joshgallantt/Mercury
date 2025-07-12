@@ -56,10 +56,11 @@ GET:
 
 ```Swift
 let result = await client.get("/users/42?expand=details")
+
 switch result {
 case .success(let response):
-    // response.data is Data, response.response is URLResponse
     print(String(data: response.data, encoding: .utf8) ?? "")
+    print("Status code:", response.response.statusCode)
 case .failure(let error):
     print("Request failed: \(error)")
 }
@@ -68,12 +69,17 @@ case .failure(let error):
 POST:
 
 ```Swift
-let postData = try JSONEncoder().encode(["name": "Swift"]) // Example body
-enum PostResult {
-    case success(HTTPSuccess)
-    case failure(HTTPFailure)
-}
+let postData = try JSONEncoder().encode(["name": "Swift"])
+
 let result = await client.post("/items", body: postData)
+
+switch result {
+case .success(let response):
+    print(String(data: response.data, encoding: .utf8) ?? "")
+    print("Status code:", response.response.statusCode)
+case .failure(let error):
+    print("Request failed: \(error)")
+}
 ```
 
 All verbs (GET, POST, PUT, PATCH, DELETE) are supported with identical ergonomics.

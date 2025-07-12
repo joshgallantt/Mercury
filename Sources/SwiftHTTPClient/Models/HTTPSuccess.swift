@@ -9,5 +9,5 @@ import Foundation
 
 public struct HTTPSuccess: Sendable {
     public let data: Data
-    public let response: URLResponse
+    public let response: HTTPURLResponse
 }

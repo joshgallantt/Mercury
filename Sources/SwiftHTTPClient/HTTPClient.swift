@@ -196,7 +196,7 @@ public actor HTTPClient {
     }
 
     private func send(request: URLRequest) async -> Result<HTTPSuccess, HTTPFailure> {
-        let session = self.session  // capture in actor-isolated context, then suspend safely
+        let session = self.session
 
         do {
             let (data, response) = try await session.data(for: request)
@@ -205,7 +205,7 @@ public actor HTTPClient {
             }
 
             if (200...299).contains(httpResponse.statusCode) {
-                return .success(HTTPSuccess(data: data, response: response))
+                return .success(HTTPSuccess(data: data, response: httpResponse))
             } else {
                 return .failure(.server(statusCode: httpResponse.statusCode, data: data))
             }
