@@ -1,2 +1,140 @@
 # SwiftHTTPClient
+
 A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fully async/await, cache support, and ergonomic request building.
+
+---
+
+## Features
+- Actor-isolated for safe concurrency (Swift 6 actors)
+- Fully async/await API
+- First-class request & response modeling
+- Built-in cache support (URLCache)
+- Customizable headers, session, and base URL
+- Automatic URL normalization
+- Simple, ergonomic API for all HTTP verbs
+
+---
+
+## Requirements
+- Swift 5.9 or later
+- iOS 15+ / macOS 12+
+
+---
+
+## Installation
+
+Swift Package Manager:
+
+Add the following to your Package.swift dependencies:
+
+```Swift
+.package(url: "https://github.com/joshgallantt/SwiftHTTPClient.git", from: "1.0.0")
+```
+
+Or via Xcode: File > Add Packages... and search for this repository URL.
+
+---
+
+## Basic Usage
+
+### Creating a Client
+
+```Swift
+import SwiftHTTPClient
+
+let client = HTTPClient(host: "https://api.example.com")
+```
+
+### Performing Requests
+
+GET:
+
+```Swift
+let result = await client.get("/users/42?expand=details")
+switch result {
+case .success(let response):
+    // response.data is Data, response.response is URLResponse
+    print(String(data: response.data, encoding: .utf8) ?? "")
+case .failure(let error):
+    print("Request failed: \(error)")
+}
+```
+
+POST:
+
+```Swift
+let postData = try JSONEncoder().encode(["name": "Swift"]) // Example body
+enum PostResult {
+    case success(HTTPSuccess)
+    case failure(HTTPFailure)
+}
+let result = await client.post("/items", body: postData)
+```
+
+All verbs (GET, POST, PUT, PATCH, DELETE) are supported with identical ergonomics.
+
+### Query Parameters and Fragments
+
+```Swift
+let result = await client.get("/things", queryItems: ["page": "1", "q": "foo"], fragment: "details")
+```
+
+### Headers
+
+```Swift
+let result = await client.get("/me", headers: ["Authorization": "Bearer TOKEN"])
+```
+
+---
+
+## Advanced Usage
+
+### Custom URLSession
+
+You can inject your own URLSession (or any HTTPSession) for testing or custom configuration:
+
+```Swift
+let customSession = URLSession(configuration: .ephemeral)
+let client = HTTPClient(host: "api.example.com", session: customSession)
+```
+
+### Controlling Cache
+
+Each request can specify a cache policy:
+
+```Swift
+let result = await client.get("/cache", cachePolicy: .reloadIgnoringLocalCacheData)
+```
+
+### Customizing Default Headers
+
+Default common headers are pre-applied, but you can override them if you want the client to always use certain ones.
+
+```Swift
+let client = HTTPClient(host: "api.example.com", commonHeaders: [
+    "Accept": "application/json",
+    "Authorization": "Bearer ..."
+])
+```
+
+---
+
+## Testing
+
+This package includes comprehensive tests for URL normalization, error handling, and all HTTP methods (see HTTPClientTests.swift).
+
+You can run tests with:
+
+swift test
+
+---
+
+## License
+
+MIT. See LICENSE for details.
+
+---
+
+## Credits
+
+Created by Josh Gallant.
