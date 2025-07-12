@@ -2,12 +2,10 @@
 
 <h1>SwiftHTTPClient</h1>
 
-<!-- Platforms badge on its own line -->
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2015%2B%20%7C%20iPadOS%2015%2B%20%7C%20macOS%2012%2B%20%7C%20watchOS%208%2B-blue.svg?style=flat)](#requirements)
 <br>
 
-<!-- The other badges on the next line, in a row -->
-[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg?style=flat)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
@@ -25,12 +23,6 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fu
 - Automatic URL normalization
 - Simple, ergonomic API for all HTTP verbs
 - Fully Tested
-
-
-
-## <br> Requirements
-- Swift 5.9 or later
-- iOS 15+ / macOS 12+
 
 
 
