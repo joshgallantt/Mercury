@@ -8,9 +8,10 @@
 import XCTest
 @testable import SwiftHTTPClient
 
+@MainActor
 final class HTTPClientTests: XCTestCase {
     // MARK: - Common test data
-    let validHost = "api.example.com"
+    let validHost = "localhost"
     var client: HTTPClient!
 
     override func setUp() {
@@ -21,26 +22,26 @@ final class HTTPClientTests: XCTestCase {
     // MARK: - Host Normalization
 
     func test_normalizeHost_removesScheme_andTrailingSlash() {
-        let input = "https://api.example.com/"
+        let input = "https://localhost/"
         let (scheme, host, basePath) = HTTPClient.normalizeHost(input)
         XCTAssertEqual(scheme, "https")
-        XCTAssertEqual(host, "api.example.com")
+        XCTAssertEqual(host, "localhost")
         XCTAssertEqual(basePath, "")
     }
 
     func test_normalizeHost_handlesBasePath() {
-        let input = "https://api.example.com/v2"
+        let input = "https://localhost/v2"
         let (scheme, host, basePath) = HTTPClient.normalizeHost(input)
         XCTAssertEqual(scheme, "https")
-        XCTAssertEqual(host, "api.example.com")
+        XCTAssertEqual(host, "localhost")
         XCTAssertEqual(basePath, "/v2")
     }
 
     func test_normalizeHost_handlesMultipleSlashesAndSubdomains() {
-        let input = "www.api.example.com////foo"
+        let input = "www.localhost////foo"
         let (scheme, host, basePath) = HTTPClient.normalizeHost(input)
         XCTAssertEqual(scheme, "https")
-        XCTAssertEqual(host, "www.api.example.com")
+        XCTAssertEqual(host, "www.localhost")
         XCTAssertEqual(basePath, "/foo")
     }
 
@@ -48,14 +49,14 @@ final class HTTPClientTests: XCTestCase {
 
     func test_get_successfulRequest_returnsDataAndResponse() async {
         let expectedData = #"{"ok":true}"#.data(using: .utf8)!
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/test")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/test")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
 
         let result = await client.get("/test")
         switch result {
         case .success(let output):
             XCTAssertEqual(output.data, expectedData)
-            XCTAssertEqual((output.response as? HTTPURLResponse)?.statusCode, 200)
+            XCTAssertEqual(output.response.statusCode, 200)
         default:
             XCTFail("Expected success")
         }
@@ -77,7 +78,7 @@ final class HTTPClientTests: XCTestCase {
 
     func test_get_non2xxResponse_returnsServerError() async {
         let data = "Error".data(using: .utf8)!
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/fail")!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/fail")!, statusCode: 404, httpVersion: nil, headerFields: nil)!
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(data, response)))
 
         let result = await client.get("/fail")
@@ -110,7 +111,7 @@ final class HTTPClientTests: XCTestCase {
     }
 
     func test_get_invalidResponseType_returnsInvalidResponseError() async {
-        let response = URLResponse(url: URL(string: "https://api.example.com/strange")!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
+        let response = URLResponse(url: URL(string: "https://localhost/strange")!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(Data(), response)))
 
         let result = await client.get("/strange")
@@ -126,27 +127,207 @@ final class HTTPClientTests: XCTestCase {
     }
 
     // MARK: - POST Requests
-
-    func test_post_withBody_successful() async {
-        let expectedData = #"{"created":1}"#.data(using: .utf8)!
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/things")!, statusCode: 201, httpVersion: nil, headerFields: nil)!
+    
+    func test_post_encodableBody_encodingFailure_returnsEncodingError() async {
+        struct NonEncodable: Encodable {
+            let x: Any
+            func encode(to encoder: Encoder) throws {
+                throw NSError(domain: "enc", code: 42)
+            }
+        }
+        let badBody = NonEncodable(x: "notEncodable")
+        let result = await client.post("/things", body: badBody)
+        if case .failure(let error) = result {
+            if case .encoding = error {
+                // expected
+            } else {
+                XCTFail("Expected .encoding error")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+    
+    func test_post_data_successfulRequest_returnsDataAndResponse() async {
+        let expectedData = #"{"posted":true}"#.data(using: .utf8)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/create")!, statusCode: 201, httpVersion: nil, headerFields: nil)!
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
-        let postData = #"{"name":"swift"}"#.data(using: .utf8)
-
-        let result = await client.post("/things", body: postData)
+        
+        let result = await client.post("/create", data: expectedData)
         switch result {
         case .success(let output):
             XCTAssertEqual(output.data, expectedData)
-            XCTAssertEqual((output.response as? HTTPURLResponse)?.statusCode, 201)
+            XCTAssertEqual(output.response.statusCode, 201)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+    
+    func test_post_data_serverError_returnsServerError() async {
+        let data = "Error".data(using: .utf8)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/error")!, statusCode: 400, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(data, response)))
+        
+        let result = await client.post("/error", data: data)
+        if case .failure(let error) = result {
+            if case .server(let code, let returnedData) = error {
+                XCTAssertEqual(code, 400)
+                XCTAssertEqual(returnedData, data)
+            } else {
+                XCTFail("Expected .server error")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    func test_post_invalidURL_returnsTransportError() async {
+        client = HTTPClient(host: "", session: MockHTTPSession(scenario: .error(NSError(domain: "shouldNotBeCalled", code: 1))))
+        let result = await client.post("bad path", data: nil)
+        if case .failure(let error) = result {
+            if case .transport = error {
+                // expected
+            } else {
+                XCTFail("Expected .transport error")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    func test_patch_withNilBody_successfulRequest_returnsDataAndResponse() async {
+        let expectedData = #"{"ok":true}"#.data(using: .utf8)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/things")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
+        let result = await client.patch("/things", body: nil)
+        switch result {
+        case .success(let output):
+            XCTAssertEqual(output.data, expectedData)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+    
+    func test_post_withNilBody_sendsEmptyBodyAndReturnsSuccess() async {
+        let expectedData = Data()
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/empty")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
+        let result = await client.post("/empty", data: nil)
+        switch result {
+        case .success(let output):
+            XCTAssertEqual(output.data, expectedData)
+            XCTAssertEqual(output.response.statusCode, 200)
         default:
             XCTFail("Expected success")
         }
     }
 
+    func test_patch_transportError_propagatesError() async {
+        let transportError = URLError(.cannotConnectToHost)
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .error(transportError)))
+        let result = await client.patch("/fail", body: nil)
+        if case .failure(let error) = result {
+            if case .transport(let err as URLError) = error {
+                XCTAssertEqual(err.code, .cannotConnectToHost)
+            } else {
+                XCTFail("Expected URLError in .transport")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    func test_put_withNilBody_successfulRequest_returnsDataAndResponse() async {
+        let expectedData = #"{"ok":true}"#.data(using: .utf8)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/put")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
+        let result = await client.put("/put", body: nil)
+        switch result {
+        case .success(let output):
+            XCTAssertEqual(output.data, expectedData)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+    func test_put_transportError_propagatesError() async {
+        let transportError = URLError(.cannotWriteToFile)
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .error(transportError)))
+        let result = await client.put("/fail", body: nil)
+        if case .failure(let error) = result {
+            if case .transport(let err as URLError) = error {
+                XCTAssertEqual(err.code, .cannotWriteToFile)
+            } else {
+                XCTFail("Expected URLError in .transport")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    // DELETE with nil body, positive and error
+    func test_delete_withNilBody_successfulRequest_returnsDataAndResponse() async {
+        let expectedData = Data()
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/things")!, statusCode: 204, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
+        let result = await client.delete("/things", body: nil)
+        switch result {
+        case .success(let output):
+            XCTAssertEqual(output.data, expectedData)
+            XCTAssertEqual(output.response.statusCode, 204)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+    func test_delete_transportError_propagatesError() async {
+        let transportError = URLError(.cannotRemoveFile)
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .error(transportError)))
+        let result = await client.delete("/fail", body: nil)
+        if case .failure(let error) = result {
+            if case .transport(let err as URLError) = error {
+                XCTAssertEqual(err.code, .cannotRemoveFile)
+            } else {
+                XCTFail("Expected URLError in .transport")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    // buildRequest: nil headers
+    func test_buildRequest_withNilHeaders_usesCommonHeadersOnly() {
+        let url = URL(string: "https://localhost")!
+        let request = client.buildRequest(url: url, method: .GET, headers: nil, body: nil, cachePolicy: .useProtocolCachePolicy)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+    }
+
+    // normalizePath edge: both empty
+    func test_normalizePath_withEmptyBaseAndPath_returnsSlash() {
+        let result = HTTPClient.normalizePath("", "")
+        XCTAssertEqual(result, "/")
+    }
+
+    // HTTPFailure.encoding
+    func test_HTTPFailure_description_encoding() {
+        let error = HTTPFailure.encoding(NSError(domain: "enc", code: 999))
+        XCTAssertTrue(error.description.contains("Encoding error"))
+    }
+
+    // buildURL with only basePath
+    func test_buildURL_withEmptyPathAndBasePath() {
+        client = HTTPClient(host: "example.com/v1", session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())))
+        let url = client.buildURL(path: "", queryItems: nil, fragment: nil)
+        XCTAssertNotNil(url)
+        XCTAssertTrue(url!.absoluteString.contains("/v1"))
+    }
+
+
     // MARK: - Headers and URL Construction
 
     func test_headers_areMerged_customOverridesDefault() async {
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/merge")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/merge")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         let defaultHeaders = ["Accept": "application/json", "X-Default": "default"]
         let customHeaders = ["X-Default": "override", "X-Custom": "value"]
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(Data(), response)), commonHeaders: defaultHeaders)
@@ -193,7 +374,7 @@ final class HTTPClientTests: XCTestCase {
         switch result {
         case .success(let output):
             XCTAssertEqual(output.data, expectedData)
-            XCTAssertEqual((output.response as? HTTPURLResponse)?.statusCode, 200)
+            XCTAssertEqual(output.response.statusCode, 200)
         default:
             XCTFail("Expected success")
         }
@@ -201,14 +382,14 @@ final class HTTPClientTests: XCTestCase {
 
     func test_patch_successfulRequest_returnsDataAndResponse() async {
         let expectedData = #"{"patched":1}"#.data(using: .utf8)!
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/things")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/things")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
         let patchData = #"{"field":"new"}"#.data(using: .utf8)
         let result = await client.patch("/things", body: patchData)
         switch result {
         case .success(let output):
             XCTAssertEqual(output.data, expectedData)
-            XCTAssertEqual((output.response as? HTTPURLResponse)?.statusCode, 200)
+            XCTAssertEqual(output.response.statusCode, 200)
         default:
             XCTFail("Expected success")
         }
@@ -216,13 +397,13 @@ final class HTTPClientTests: XCTestCase {
 
     func test_delete_successfulRequest_returnsDataAndResponse() async {
         let expectedData = Data()
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/things")!, statusCode: 204, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/things")!, statusCode: 204, httpVersion: nil, headerFields: nil)!
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
         let result = await client.delete("/things")
         switch result {
         case .success(let output):
             XCTAssertEqual(output.data, expectedData)
-            XCTAssertEqual((output.response as? HTTPURLResponse)?.statusCode, 204)
+            XCTAssertEqual(output.response.statusCode, 204)
         default:
             XCTFail("Expected success")
         }
@@ -232,7 +413,7 @@ final class HTTPClientTests: XCTestCase {
 
     func test_patch_serverError_returnsServerError() async {
         let data = "Bad Patch".data(using: .utf8)!
-        let response = HTTPURLResponse(url: URL(string: "https://api.example.com/patch")!, statusCode: 400, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/patch")!, statusCode: 400, httpVersion: nil, headerFields: nil)!
         client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(data, response)))
         let result = await client.patch("/patch", body: data)
         if case .failure(let error) = result {
@@ -336,7 +517,7 @@ final class HTTPClientTests: XCTestCase {
     }
 
     func test_buildRequest_mergesHeadersCorrectly() {
-        let url = URL(string: "https://api.example.com")!
+        let url = URL(string: "https://localhost")!
         let request = client.buildRequest(
             url: url,
             method: .GET,

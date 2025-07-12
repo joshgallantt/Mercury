@@ -8,7 +8,7 @@
 import Foundation
 
 public actor HTTPClient {
-    private nonisolated let session: HTTPSession
+    private let session: HTTPSession
     private let scheme: String
     private let host: String
     private let port: Int?
