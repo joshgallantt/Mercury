@@ -15,7 +15,7 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fu
 
 
 
-## Requirements
+## <br> Requirements
 - Swift 5.9 or later
 - iOS 15+ / macOS 12+
 
