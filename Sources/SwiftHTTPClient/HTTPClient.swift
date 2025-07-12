@@ -107,15 +107,39 @@ public actor HTTPClient {
         await request(path: path, method: .GET, headers: headers, queryItems: queryItems, fragment: fragment, cachePolicy: cachePolicy)
     }
 
+    public func post<T: Encodable>(
+        _ path: String,
+        headers: [String: String]? = nil,
+        queryItems: [String: String]? = nil,
+        body: T,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        encoder: JSONEncoder = JSONEncoder()
+    ) async -> Result<HTTPSuccess, HTTPFailure> {
+        do {
+            let data = try encoder.encode(body)
+            return await post(
+                path,
+                headers: headers,
+                queryItems: queryItems,
+                body: data,
+                fragment: fragment,
+                cachePolicy: cachePolicy
+            )
+        } catch {
+            return .failure(.encoding(error))
+        }
+    }
+
     public func post(
         _ path: String,
         headers: [String: String]? = nil,
         queryItems: [String: String]? = nil,
-        body: Data? = nil,
+        data: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) async -> Result<HTTPSuccess, HTTPFailure> {
-        await request(path: path, method: .POST, headers: headers, queryItems: queryItems, body: body, fragment: fragment, cachePolicy: cachePolicy)
+        await request(path: path, method: .POST, headers: headers, queryItems: queryItems, body: data, fragment: fragment, cachePolicy: cachePolicy)
     }
 
     public func put(

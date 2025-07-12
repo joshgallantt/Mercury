@@ -53,7 +53,7 @@ let client = HTTPClient(host: "https://api.example.com")
 
 ### Performing Requests
 
-GET:
+#### GET:
 
 ```Swift
 let result = await client.get("/users/42?expand=details")
@@ -67,12 +67,18 @@ case .failure(let error):
 }
 ```
 
-POST:
+#### POST:
 
-```Swift
-let postData = try JSONEncoder().encode(["name": "Swift"])
+You can POST using either any Swift type conforming to `Encodable` (preferred for JSON), or raw `Data` if you have a custom payload.
 
-let result = await client.post("/items", body: postData)
+**Using an Encodable type (preferred for JSON APIs):**
+
+```swift
+struct Item: Encodable {
+    let name: String
+}
+
+let result = await client.post("/items", body: Item(name: "Swift"))
 
 switch result {
 case .success(let response):
@@ -82,6 +88,26 @@ case .failure(let error):
     print("Request failed: \(error)")
 }
 ```
+
+**Using raw Data (for custom or non-JSON payloads):**
+
+```swift
+let postData = try JSONEncoder().encode(["name": "Swift"])
+
+let result = await client.post("/items", data: postData)
+
+switch result {
+case .success(let response):
+    print(String(data: response.data, encoding: .utf8) ?? "")
+    print("Status code:", response.response.statusCode)
+case .failure(let error):
+    print("Request failed: \(error)")
+}
+```
+
+> **Tip:**
+> For most JSON APIs, use the `body:` parameter with your `Encodable` Swift structs or dictionaries.
+> Use the `data:` parameter for sending pre-encoded or binary payloads.
 
 All verbs (GET, POST, PUT, PATCH, DELETE) are supported with identical ergonomics.
 

@@ -12,6 +12,7 @@ public enum HTTPFailure: Error, CustomStringConvertible, Sendable {
     case server(statusCode: Int, data: Data?)
     case invalidResponse
     case transport(Error)
+    case encoding(Error)
 
     public var description: String {
         switch self {
@@ -27,6 +28,8 @@ public enum HTTPFailure: Error, CustomStringConvertible, Sendable {
             return "Invalid or unexpected response from server"
         case .transport(let error):
             return "Transport error: \(error.localizedDescription)"
+        case .encoding(let error):
+            return "Encoding error: \(error.localizedDescription)"
         }
     }
 }
