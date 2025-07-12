@@ -1,17 +1,16 @@
 <div align="center">
-# SwiftHTTPClient
 
-<!-- Swift version badge -->
-[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg?style=flat)](https://swift.org)
+<h1>SwiftHTTPClient</h1>
 
-<!-- Platforms badge -->
+<!-- Platforms badge on its own line -->
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2015%2B%20%7C%20iPadOS%2015%2B%20%7C%20macOS%2012%2B%20%7C%20watchOS%208%2B-blue.svg?style=flat)](#requirements)
+<br>
 
-<!-- Code coverage badge (static) -->
+<!-- The other badges on the next line, in a row -->
+[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg?style=flat)](https://swift.org)
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen.svg?style=flat)](#)
-
-<!-- License badge -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 </div>
 
 A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, fully async/await, cache support, and ergonomic request building.
