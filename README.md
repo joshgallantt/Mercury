@@ -4,7 +4,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg?style=flat)](https://swift.org)
 
 <!-- Platforms badge -->
-![Coverage]](https://img.shields.io/badge/Platforms-iOS%2015%2B%20%7C%20iPadOS%2015%2B%20%7C%20macOS%2012%2B%20%7C%20watchOS%208%2B-blue.svg?style=flat)](#requirements)
+![Platforms]](https://img.shields.io/badge/Platforms-iOS%2015%2B%20%7C%20iPadOS%2015%2B%20%7C%20macOS%2012%2B%20%7C%20watchOS%208%2B-blue.svg?style=flat)](#requirements)
 
 <!-- Code coverage badge (static) -->
 [![Coverage](https://img.shields.io/badge/Coverage-94%25-brightgreen.svg?style=flat)](#)
