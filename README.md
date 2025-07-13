@@ -2,7 +2,7 @@
 
 <h1>SwiftHTTPClient</h1>
 
-[![Platforms](https://img.shields.io/badge/Platforms-iOS%2015%2B%20%7C%20iPadOS%2015%2B%20%7C%20macOS%2012%2B%20%7C%20watchOS%208%2B-blue.svg?style=flat)](#requirements)
+[![Platforms](https://img.shields.io/badge/Platforms-iOS%2016%2B%20%7C%20iPadOS%2016%2B%20%7C%20macOS%2013%2B%20%7C%20watchOS%209%2B%20%7C%20tvOS%2016%2B%20%7C%20visionOS%201%2B-blue.svg?style=flat)](#requirements)
 <br>
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
