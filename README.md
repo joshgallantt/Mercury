@@ -14,8 +14,7 @@
 
 A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, async/await, cache support, and ergonomic request building.
 
-
-## <br> Features
+## <br><br> Features
 - Actor-isolated for safe concurrency (Swift 6 actors)
 - Fully async/await API
 - First-class request & response modeling
@@ -25,152 +24,180 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, as
 - Simple, ergonomic API for all HTTP verbs
 - Fully Tested
 
+## <br><br> Installation
 
+Add SwiftHTTPClient to your dependencies in Package.swift:
 
-## <br> Installation
+    .package(url: "https://github.com/joshgallantt/SwiftHTTPClient.git", from: "1.0.0")
 
-Swift Package Manager:
+Or via Xcode: File > Add Packages… and search for this repo URL.
 
-Add the following to your Package.swift dependencies:
+## <br><br> Basic Usage
+
+Import the package:
 
 ```Swift
-.package(url: "https://github.com/joshgallantt/SwiftHTTPClient.git", from: "1.0.0")
+    import SwiftHTTPClient
 ```
 
-Or via Xcode: File > Add Packages... and search for this repository URL.
-
-
-
-## <br> Basic Usage
-
-### Creating a Client
+Create an HTTP client instance:
 
 ```Swift
-import SwiftHTTPClient
-
-let client = HTTPClient(host: "https://api.example.com")
+    let client = HTTPClient(host: "https://api.example.com")
 ```
 
-### Performing Requests
-
-#### GET:
+Perform a GET request:
 
 ```Swift
-let result = await client.get("/users/42?expand=details")
+    let result = await client.get("/users/42")
+```
 
+Handle the result:
+
+```Swift
 switch result {
 case .success(let response):
     print(String(data: response.data, encoding: .utf8) ?? "")
     print("Status code:", response.response.statusCode)
 case .failure(let error):
-    print("Request failed: \(error)")
+    print("Request failed:", error)
 }
 ```
 
-#### POST:
+POST with an Encodable body:
 
-You can POST using either any Swift type conforming to `Encodable` (preferred for JSON), or raw `Data` if you have a custom payload.
-
-**Using an Encodable type (preferred for JSON APIs):**
-
-```swift
+```Swift
 struct Item: Encodable {
     let name: String
 }
 
 let result = await client.post("/items", body: Item(name: "Swift"))
-
-switch result {
-case .success(let response):
-    // Access the raw response data
-    print(String(data: response.data, encoding: .utf8) ?? "")
-    print("Status code:", response.response.statusCode)
-case .failure(let error):
-    print("Request failed:", error)
-}
 ```
 
-**Using raw Data (for custom or non-JSON payloads):**
+POST with Data Payload:
 
-```swift
+```Swift
 let payload = "field1=value1&field2=value2".data(using: .utf8)!
-
 let result = await client.post(
     "/submit",
     headers: ["Content-Type": "application/x-www-form-urlencoded"],
     data: payload
 )
+```
 
-switch result {
-case .success(let response):
-    print("Status code:", response.response.statusCode)
-case .failure(let error):
-    print("Request failed:", error)
+## <br><br> Cache Usage
+
+You can control cache policy per request, or rely on the built-in shared cache:
+
+```Swift
+let result = await client.get(
+    "/data",
+    cachePolicy: .reloadIgnoringLocalCacheData
+)
+```
+
+By default, responses may be cached using URLCache if the server’s headers allow.
+
+## <br><br> Headers
+
+Set commonHeaders when creating your client to send headers with every request.
+
+Use the headers parameter to override or add headers for a single request. If a key appears in both, the per-request header wins.
+
+```Swift
+let client = HTTPClient(
+    host: "https://api.example.com",
+    commonHeaders: [
+        "Content-Type": "application/json",
+        "X-Client-Version": "1.0"
+    ]
+)
+
+let result = await client.post(
+    "/upload",
+    headers: [
+        "Content-Type": "image/png", // overrides common header
+        "X-Request-ID": "abc-123"    // adds an extra header
+    ],
+    data: imageData
+)
+```
+
+## <br><br> Query Parameters and URL Fragments
+
+You can add query parameters and URL fragments to any request.
+
+Use the queryItems parameter to pass query parameters as a `[String: String]` dictionary.
+
+Use the fragment parameter to append a fragment to the URL.
+
+```Swift
+let result = await client.get(
+    "/search",
+    queryItems: [
+        "q": "swift",
+        "limit": "10"
+    ],
+    fragment: "section2"
+)
+```
+
+This produces a request to:
+
+```Swift
+https://api.example.com/search?q=swift&limit=10#section2
+```
+
+## <br><br> Results: HTTPSuccess and HTTPFailure
+
+All HTTPClient methods return a `Result<HTTPSuccess, HTTPFailure>`.
+
+### <br> HTTPSuccess
+
+Represents a successful HTTP response (2xx). Contains:
+
+```Swift
+struct HTTPSuccess: Sendable {
+    let data: Data
+    let response: HTTPURLResponse
 }
 ```
 
-> **Tip:**
-> For most JSON APIs, use the `body:` parameter with your `Encodable` Swift structs or dictionaries.
-> Use the `data:` parameter for sending pre-encoded or binary payloads.
+- data — the response body as Data
+- response — the HTTPURLResponse (status code, headers, etc)
 
-All verbs (GET, POST, PUT, PATCH, DELETE) are supported with identical ergonomics.
+### <br> HTTPFailure
 
-### Query Parameters and Fragments
-
+Represents a failed request. Possible cases:
 ```Swift
-let result = await client.get("/things", queryItems: ["page": "1", "q": "foo"], fragment: "details")
+enum HTTPFailure: Error, CustomStringConvertible, Sendable {
+    case invalidURL
+    case server(statusCode: Int, data: Data?)
+    case invalidResponse
+    case transport(Error)
+    case encoding(Error)
+}
 ```
 
-### Headers
+- .invalidURL — The URL is invalid or could not be constructed.
+- .server(statusCode:data:) — The server returned a non-2xx status code (with optional error body).
+- .invalidResponse — Response was missing or malformed.
+- .transport(Error) — A transport-layer error occurred (such as network down, timeout).
+- .encoding(Error) — Failed to encode the request body.
+
+All HTTPFailure values have a human-readable .description for easy logging.
+
+#### <br> Example usage
 
 ```Swift
-let result = await client.get("/me", headers: ["Authorization": "Bearer TOKEN"])
+let result = await client.get("/resource")
+switch result {
+case .success(let output):
+    print("Data: \(output.data)")
+    print("Status code: \(output.response.statusCode)")
+case .failure(let error):
+    print("Request failed: \(error.description)")
+}
 ```
 
-
-## <br> Advanced Usage
-
-### Custom URLSession
-
-You can inject your own URLSession (or any HTTPSession) for testing or custom configuration:
-
-```Swift
-let customSession = URLSession(configuration: .ephemeral)
-let client = HTTPClient(host: "api.example.com", session: customSession)
-```
-
-### Controlling Cache
-
-Each request can specify a cache policy:
-
-```Swift
-let result = await client.get("/cache", cachePolicy: .reloadIgnoringLocalCacheData)
-```
-
-### Customizing Default Headers
-
-Default common headers are pre-applied, but you can override them if you want the client to always use certain ones.
-
-```Swift
-let client = HTTPClient(host: "api.example.com", commonHeaders: [
-    "Accept": "application/json",
-    "Authorization": "Bearer ..."
-])
-```
-
-
-
-## <br> Testing
-
-This package includes comprehensive tests for URL normalization, error handling, and all HTTP methods (see HTTPClientTests.swift).
-
-
-## <br> License
-
-MIT. See LICENSE for details.
-
-
-
-## <br> Credits
-
-Created by Josh Gallant.
+Created by Josh Gallant. MIT License.
