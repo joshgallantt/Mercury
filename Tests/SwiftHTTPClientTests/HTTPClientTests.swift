@@ -62,20 +62,6 @@ final class HTTPClientTests: XCTestCase {
         }
     }
 
-    func test_get_invalidURL_returnsTransportError() async {
-        client = HTTPClient(host: "", session: MockHTTPSession(scenario: .error(NSError(domain: "shouldNotBeCalled", code: 1))))
-        let result = await client.get("bad path")
-        if case .failure(let error) = result {
-            if case .transport = error {
-                // expected
-            } else {
-                XCTFail("Expected .transport error")
-            }
-        } else {
-            XCTFail("Expected failure")
-        }
-    }
-
     func test_get_non2xxResponse_returnsServerError() async {
         let data = "Error".data(using: .utf8)!
         let response = HTTPURLResponse(url: URL(string: "https://localhost/fail")!, statusCode: 404, httpVersion: nil, headerFields: nil)!
@@ -181,20 +167,6 @@ final class HTTPClientTests: XCTestCase {
         }
     }
 
-    func test_post_invalidURL_returnsTransportError() async {
-        client = HTTPClient(host: "", session: MockHTTPSession(scenario: .error(NSError(domain: "shouldNotBeCalled", code: 1))))
-        let result = await client.post("bad path", data: nil)
-        if case .failure(let error) = result {
-            if case .transport = error {
-                // expected
-            } else {
-                XCTFail("Expected .transport error")
-            }
-        } else {
-            XCTFail("Expected failure")
-        }
-    }
-
     func test_patch_withNilBody_successfulRequest_returnsDataAndResponse() async {
         let expectedData = #"{"ok":true}"#.data(using: .utf8)!
         let response = HTTPURLResponse(url: URL(string: "https://localhost/things")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
@@ -206,6 +178,19 @@ final class HTTPClientTests: XCTestCase {
         default:
             XCTFail("Expected success")
         }
+    }
+    
+    func test_normalizeHost_schemeOnly_returnsEmptyHost() {
+        let (scheme, host, basePath) = HTTPClient.normalizeHost("https://")
+        XCTAssertEqual(scheme, "https")
+        XCTAssertEqual(host, "")
+        XCTAssertEqual(basePath, "")
+    }
+    
+    func test_extractHostAndBasePath_emptyInput_hitsFallback() {
+        let (host, basePath) = HTTPClient.extractHostAndBasePath(from: "")
+        XCTAssertEqual(host, "")  // forces ?? "" path
+        XCTAssertEqual(basePath, "")
     }
     
     func test_post_withNilBody_sendsEmptyBodyAndReturnsSuccess() async {
@@ -235,6 +220,89 @@ final class HTTPClientTests: XCTestCase {
         } else {
             XCTFail("Expected failure")
         }
+    }
+    
+    func test_normalizeHost_withMalformedURL_returnsEmptyHostAndSanitizesPath() {
+        let (scheme, host, basePath) = HTTPClient.normalizeHost("https:///foo/bar")
+        XCTAssertEqual(scheme, "https")
+        XCTAssertEqual(host, "")
+        XCTAssertEqual(basePath, "/foo/bar")
+    }
+
+    func test_normalizePath_withDoubleSlashesAndWhitespace_returnsSlash() {
+        let result = HTTPClient.normalizePath("   ", "///")
+        XCTAssertEqual(result, "/")
+    }
+
+    func test_buildRequest_customHeadersOverrideAllCommonHeaders() {
+        let url = URL(string: "https://localhost")!
+        let defaultHeaders = ["Accept": "json1", "Content-Type": "json2", "X-Default": "a"]
+        let customHeaders = ["Accept": "json3", "Content-Type": "json4", "X-Default": "b"]
+        let client = HTTPClient(host: "localhost", session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())), commonHeaders: defaultHeaders)
+        let request = client.buildRequest(url: url, method: .GET, headers: customHeaders, body: nil, cachePolicy: .useProtocolCachePolicy)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "json3")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "json4")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Default"), "b")
+    }
+
+    func test_send_with200StatusAndNoData_returnsSuccessWithEmptyData() async {
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/empty")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(Data(), response)))
+        let result = await client.get("/empty")
+        switch result {
+        case .success(let output):
+            XCTAssertEqual(output.data, Data())
+            XCTAssertEqual(output.response.statusCode, 200)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+    
+    func test_post_encodableBody_successfulRequest_returnsDataAndResponse() async {
+        struct TestModel: Codable, Equatable { let value: String }
+        let input = TestModel(value: "ok")
+        let _ = try! JSONEncoder().encode(input)
+        let expectedData = #"{"posted":true}"#.data(using: .utf8)!
+        let response = HTTPURLResponse(url: URL(string: "https://localhost/encodable")!, statusCode: 201, httpVersion: nil, headerFields: nil)!
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(expectedData, response)))
+
+        let result = await client.post("/encodable", body: input)
+        switch result {
+        case .success(let output):
+            XCTAssertEqual(output.data, expectedData)
+            XCTAssertEqual(output.response.statusCode, 201)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+
+    func test_post_encodableBody_withThrowingEncoder_returnsEncodingError() async {
+        struct Simple: Encodable { let x: Int }
+        class FailingEncoder: JSONEncoder, @unchecked Sendable {
+            override func encode<T>(_ value: T) throws -> Data where T : Encodable {
+                throw NSError(domain: "encoder", code: 77)
+            }
+        }
+        let result = await client.post("/things", body: Simple(x: 42), encoder: FailingEncoder())
+        if case .failure(let error) = result {
+            if case .encoding(let err as NSError) = error {
+                XCTAssertEqual(err.domain, "encoder")
+                XCTAssertEqual(err.code, 77)
+            } else {
+                XCTFail("Expected encoding error")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    // 6. buildURL with path == "/" and non-empty basePath
+    func test_buildURL_withSlashPathAndBasePath() {
+        let client = HTTPClient(host: "example.com/api", session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())))
+        let url = client.buildURL(path: "/", queryItems: nil, fragment: nil)
+        XCTAssertNotNil(url)
+        XCTAssertTrue(url!.absoluteString.contains("/api"))
     }
 
     func test_put_withNilBody_successfulRequest_returnsDataAndResponse() async {
@@ -428,20 +496,6 @@ final class HTTPClientTests: XCTestCase {
         }
     }
 
-    func test_delete_invalidURL_returnsTransportError() async {
-        client = HTTPClient(host: "", session: MockHTTPSession(scenario: .error(NSError(domain: "shouldNotBeCalled", code: 1))))
-        let result = await client.delete("bad path")
-        if case .failure(let error) = result {
-            if case .transport = error {
-                // expected
-            } else {
-                XCTFail("Expected .transport error")
-            }
-        } else {
-            XCTFail("Expected failure")
-        }
-    }
-
     // MARK: - Alternate Initializer
 
     func test_init_defaultSession_initializesProperly() {
@@ -528,5 +582,25 @@ final class HTTPClientTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: "X-Test"), "custom")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
     }
-
+    
+    func test_request_invalidURL_returnsInvalidURLError() async {
+        let client = HTTPClient(host: "", session: MockHTTPSession(scenario: .error(NSError())))
+        let result = await client.request(
+            path: "bad path",
+            method: .GET,
+            headers: nil,
+            queryItems: nil,
+            body: nil,
+            fragment: nil,
+            cachePolicy: .useProtocolCachePolicy
+        )
+        if case .failure(let error) = result {
+            if case .invalidURL = error {
+            } else {
+                XCTFail("Expected .invalidURL error")
+            }
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
 }
