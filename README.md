@@ -82,26 +82,30 @@ let result = await client.post("/items", body: Item(name: "Swift"))
 
 switch result {
 case .success(let response):
+    // Access the raw response data
     print(String(data: response.data, encoding: .utf8) ?? "")
     print("Status code:", response.response.statusCode)
 case .failure(let error):
-    print("Request failed: \(error)")
+    print("Request failed:", error)
 }
 ```
 
 **Using raw Data (for custom or non-JSON payloads):**
 
 ```swift
-let postData = try JSONEncoder().encode(["name": "Swift"])
+let payload = "field1=value1&field2=value2".data(using: .utf8)!
 
-let result = await client.post("/items", data: postData)
+let result = await client.post(
+    "/submit",
+    headers: ["Content-Type": "application/x-www-form-urlencoded"],
+    data: payload
+)
 
 switch result {
 case .success(let response):
-    print(String(data: response.data, encoding: .utf8) ?? "")
     print("Status code:", response.response.statusCode)
 case .failure(let error):
-    print("Request failed: \(error)")
+    print("Request failed:", error)
 }
 ```
 
