@@ -28,8 +28,9 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, as
 
 Add SwiftHTTPClient to your dependencies in Package.swift:
 
-    .package(url: "https://github.com/joshgallantt/SwiftHTTPClient.git", from: "1.0.0")
-
+```Swift
+.package(url: "https://github.com/joshgallantt/SwiftHTTPClient.git", from: "1.0.0")
+```
 Or via Xcode: File > Add Packages… and search for this repo URL.
 
 ## <br><br> Basic Usage
@@ -37,19 +38,19 @@ Or via Xcode: File > Add Packages… and search for this repo URL.
 Import the package:
 
 ```Swift
-    import SwiftHTTPClient
+import SwiftHTTPClient
 ```
 
 Create an HTTP client instance:
 
 ```Swift
-    let client = HTTPClient(host: "https://api.example.com")
+let client = HTTPClient(host: "https://api.example.com")
 ```
 
 Perform a GET request:
 
 ```Swift
-    let result = await client.get("/users/42")
+let result = await client.get("/users/42")
 ```
 
 Handle the result:
@@ -191,12 +192,16 @@ All HTTPFailure values have a human-readable .description for easy logging.
 
 ```Swift
 let result = await client.get("/resource")
+
 switch result {
+
 case .success(let output):
     print("Data: \(output.data)")
     print("Status code: \(output.response.statusCode)")
+    
 case .failure(let error):
     print("Request failed: \(error.description)")
+    
 }
 ```
 
