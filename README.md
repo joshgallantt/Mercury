@@ -194,14 +194,12 @@ All HTTPFailure values have a human-readable .description for easy logging.
 let result = await client.get("/resource")
 
 switch result {
-
 case .success(let output):
     print("Data: \(output.data)")
     print("Status code: \(output.response.statusCode)")
     
 case .failure(let error):
     print("Request failed: \(error.description)")
-    
 }
 ```
 
