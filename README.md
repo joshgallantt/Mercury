@@ -7,7 +7,7 @@
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
-[![Coverage](https://img.shields.io/badge/Coverage-99.5%25-brightgreen.svg?style=flat)](#)
+[![Coverage](https://img.shields.io/badge/Coverage-98.3%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
@@ -86,18 +86,34 @@ let result = await client.post(
 )
 ```
 
-## <br><br> Cache Usage
+## <br><br> Cache Control
 
-You can control cache policy per request, or rely on the built-in shared cache:
+SwiftHTTPClient uses `URLCache` under the hood and supports **cache policy overrides** per request.
 
-```Swift
+### Default Behavior
+
+When initializing the `HTTPClient`, you can specify a default `URLRequest.CachePolicy`. This value applies to all requests **unless explicitly overridden**.
+
+```swift
+let client = HTTPClient(
+    host: "https://api.example.com",
+    defaultCachePolicy: .returnCacheDataElseLoad
+)
+```
+
+### Per-Request Override
+
+You can override the cache policy for **any** individual request:
+
+```swift
 let result = await client.get(
-    "/data",
+    "/weather/today",
     cachePolicy: .reloadIgnoringLocalCacheData
 )
 ```
 
-By default, responses may be cached using URLCache if the server’s headers allow.
+This allows for fine-grained control without affecting the global configuration.
+
 
 ## <br><br> Headers
 

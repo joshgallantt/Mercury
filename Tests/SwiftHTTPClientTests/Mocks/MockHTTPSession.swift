@@ -16,7 +16,6 @@ final class MockHTTPSession: HTTPSession {
     
     let scenario: Scenario
     
-    // This allows tests to observe/inspect requests
     var onRequest: ((URLRequest) -> (Data, URLResponse)?)?
 
     init(scenario: Scenario) {
