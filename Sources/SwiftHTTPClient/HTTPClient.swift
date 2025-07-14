@@ -19,6 +19,14 @@ public actor HTTPClient {
 
     // MARK: - Initializers
 
+    
+    /// Initializes a new `HTTPClient` with default `URLSession` configuration.
+    ///
+    /// - Parameters:
+    ///   - host: A string representing the base URL or hostname.
+    ///   - port: Optional custom port number. If `nil`, the port is parsed from the host string if present.
+    ///   - defaultHeaders: HTTP headers that will be applied to every request by default.
+    ///   - defaultCachePolicy: The default caching policy applied to requests.
     public init(
         host: String,
         port: Int? = nil,
@@ -59,7 +67,7 @@ public actor HTTPClient {
         self.session = URLSession(configuration: configuration)
     }
 
-    public init(
+    internal init(
         host: String,
         port: Int? = nil,
         session: HTTPSession,
@@ -98,6 +106,15 @@ public actor HTTPClient {
 
     // MARK: - HTTP Methods
 
+    /// Performs a `GET` request.
+    ///
+    /// - Parameters:
+    ///   - path: Path to append to the base URL.
+    ///   - headers: Optional request headers.
+    ///   - queryItems: Optional query parameters.
+    ///   - fragment: Optional fragment to append to the URL.
+    ///   - cachePolicy: Optional cache policy for this request.
+    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
     public func get(
         _ path: String,
         headers: [String: String]? = nil,
@@ -115,6 +132,16 @@ public actor HTTPClient {
         )
     }
 
+    /// Performs a `POST` request with optional raw `Data` body.
+    ///
+    /// - Parameters:
+    ///   - path: Path to append to the base URL.
+    ///   - headers: Optional request headers.
+    ///   - queryItems: Optional query parameters.
+    ///   - data: Optional raw body data to send.
+    ///   - fragment: Optional fragment to append to the URL.
+    ///   - cachePolicy: Optional cache policy for this request.
+    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
     public func post(
         _ path: String,
         headers: [String: String]? = nil,
@@ -134,6 +161,17 @@ public actor HTTPClient {
         )
     }
 
+    /// Performs a `POST` request by encoding an `Encodable` object into JSON.
+    ///
+    /// - Parameters:
+    ///   - path: Path to append to the base URL.
+    ///   - headers: Optional request headers.
+    ///   - queryItems: Optional query parameters.
+    ///   - body: A value conforming to `Encodable` to be serialized as the request body.
+    ///   - fragment: Optional fragment to append to the URL.
+    ///   - cachePolicy: Optional cache policy for this request.
+    ///   - encoder: JSON encoder to use for encoding the body. Defaults to `JSONEncoder()`.
+    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
     public func post<T: Encodable>(
         _ path: String,
         headers: [String: String]? = nil,
@@ -158,6 +196,16 @@ public actor HTTPClient {
         }
     }
 
+    /// Performs a `PUT` request.
+    ///
+    /// - Parameters:
+    ///   - path: Path to append to the base URL.
+    ///   - headers: Optional request headers.
+    ///   - queryItems: Optional query parameters.
+    ///   - body: Optional raw body data to send.
+    ///   - fragment: Optional fragment to append to the URL.
+    ///   - cachePolicy: Optional cache policy for this request.
+    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
     public func put(
         _ path: String,
         headers: [String: String]? = nil,
@@ -177,6 +225,17 @@ public actor HTTPClient {
         )
     }
 
+    
+    /// Performs a `PATCH` request.
+    ///
+    /// - Parameters:
+    ///   - path: Path to append to the base URL.
+    ///   - headers: Optional request headers.
+    ///   - queryItems: Optional query parameters.
+    ///   - body: Optional raw body data to send.
+    ///   - fragment: Optional fragment to append to the URL.
+    ///   - cachePolicy: Optional cache policy for this request.
+    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
     public func patch(
         _ path: String,
         headers: [String: String]? = nil,
@@ -196,6 +255,17 @@ public actor HTTPClient {
         )
     }
 
+    
+    /// Performs a `DELETE` request.
+    ///
+    /// - Parameters:
+    ///   - path: Path to append to the base URL.
+    ///   - headers: Optional request headers.
+    ///   - queryItems: Optional query parameters.
+    ///   - body: Optional raw body data to send.
+    ///   - fragment: Optional fragment to append to the URL.
+    ///   - cachePolicy: Optional cache policy for this request.
+    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
     public func delete(
         _ path: String,
         headers: [String: String]? = nil,

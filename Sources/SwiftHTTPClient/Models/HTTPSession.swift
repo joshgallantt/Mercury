@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol HTTPSession {
+internal protocol HTTPSession {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 

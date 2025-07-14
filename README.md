@@ -19,7 +19,6 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, as
 - Fully async/await API
 - First-class request & response modeling
 - Built-in cache support (URLCache)
-- Customizable headers, session, and base URL
 - Automatic URL normalization
 - Simple, ergonomic API for all HTTP verbs
 - Fully Tested
