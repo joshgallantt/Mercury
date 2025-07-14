@@ -13,28 +13,31 @@ public actor HTTPClient {
     private let host: String
     private let port: Int?
     private let basePath: String
-    private let commonHeaders: [String: String]
+    private let defaultHeaders: [String: String]
+    private let defaultCachePolicy: URLRequest.CachePolicy
 
     // MARK: - Initializers
 
     public init(
         host: String,
         port: Int? = nil,
-        commonHeaders: [String: String] = [
+        defaultHeaders: [String: String] = [
             "Accept": "application/json",
             "Content-Type": "application/json"
-        ]
+        ],
+        defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) {
         let (scheme, host, basePath) = HTTPClient.normalizeHost(host)
         self.scheme = scheme
         self.host = host
         self.port = port
         self.basePath = basePath
-        self.commonHeaders = commonHeaders
+        self.defaultHeaders = defaultHeaders
+        self.defaultCachePolicy = defaultCachePolicy
 
         let configuration = URLSessionConfiguration.default
         configuration.urlCache = .shared
-        configuration.requestCachePolicy = .useProtocolCachePolicy
+        configuration.requestCachePolicy = defaultCachePolicy
         self.session = URLSession(configuration: configuration)
     }
 
@@ -42,10 +45,11 @@ public actor HTTPClient {
         host: String,
         port: Int? = nil,
         session: HTTPSession,
-        commonHeaders: [String: String] = [
+        defaultHeaders: [String: String] = [
             "Accept": "application/json",
             "Content-Type": "application/json"
-        ]
+        ],
+        defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) {
         let (scheme, host, basePath) = HTTPClient.normalizeHost(host)
         self.scheme = scheme
@@ -53,7 +57,8 @@ public actor HTTPClient {
         self.port = port
         self.session = session
         self.basePath = basePath
-        self.commonHeaders = commonHeaders
+        self.defaultHeaders = defaultHeaders
+        self.defaultCachePolicy = defaultCachePolicy
     }
 
     // MARK: - HTTP Methods
@@ -63,9 +68,16 @@ public actor HTTPClient {
         headers: [String: String]? = nil,
         queryItems: [String: String]? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy? = nil
     ) async -> Result<HTTPSuccess, HTTPFailure> {
-        return await request(path: path, method: .GET, headers: headers, queryItems: queryItems, fragment: fragment, cachePolicy: cachePolicy)
+        return await request(
+            path: path,
+            method: .GET,
+            headers: headers,
+            queryItems: queryItems,
+            fragment: fragment,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
     }
 
     public func post(
@@ -74,9 +86,17 @@ public actor HTTPClient {
         queryItems: [String: String]? = nil,
         data: Data? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy? = nil
     ) async -> Result<HTTPSuccess, HTTPFailure> {
-        return await request(path: path, method: .POST, headers: headers, queryItems: queryItems, body: data, fragment: fragment, cachePolicy: cachePolicy)
+        return await request(
+            path: path,
+            method: .POST,
+            headers: headers,
+            queryItems: queryItems,
+            body: data,
+            fragment: fragment,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
     }
 
     public func post<T: Encodable>(
@@ -85,7 +105,7 @@ public actor HTTPClient {
         queryItems: [String: String]? = nil,
         body: T,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        cachePolicy: URLRequest.CachePolicy? = nil,
         encoder: JSONEncoder = JSONEncoder()
     ) async -> Result<HTTPSuccess, HTTPFailure> {
         do {
@@ -109,9 +129,17 @@ public actor HTTPClient {
         queryItems: [String: String]? = nil,
         body: Data? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy? = nil
     ) async -> Result<HTTPSuccess, HTTPFailure> {
-        return await request(path: path, method: .PUT, headers: headers, queryItems: queryItems, body: body, fragment: fragment, cachePolicy: cachePolicy)
+        return await request(
+            path: path,
+            method: .PUT,
+            headers: headers,
+            queryItems: queryItems,
+            body: body,
+            fragment: fragment,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
     }
 
     public func patch(
@@ -120,9 +148,17 @@ public actor HTTPClient {
         queryItems: [String: String]? = nil,
         body: Data? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy? = nil
     ) async -> Result<HTTPSuccess, HTTPFailure> {
-        return await request(path: path, method: .PATCH, headers: headers, queryItems: queryItems, body: body, fragment: fragment, cachePolicy: cachePolicy)
+        return await request(
+            path: path,
+            method: .PATCH,
+            headers: headers,
+            queryItems: queryItems,
+            body: body,
+            fragment: fragment,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
     }
 
     public func delete(
@@ -131,9 +167,17 @@ public actor HTTPClient {
         queryItems: [String: String]? = nil,
         body: Data? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy? = nil
     ) async -> Result<HTTPSuccess, HTTPFailure> {
-        return await request(path: path, method: .DELETE, headers: headers, queryItems: queryItems, body: body, fragment: fragment, cachePolicy: cachePolicy)
+        return await request(
+            path: path,
+            method: .DELETE,
+            headers: headers,
+            queryItems: queryItems,
+            body: body,
+            fragment: fragment,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
     }
 
     // MARK: - Request Handling
@@ -156,10 +200,9 @@ public actor HTTPClient {
         let request = buildRequest(url: url, method: method, headers: headers, body: body, cachePolicy: cachePolicy)
         return await send(request: request)
     }
-    
-    
+
     // MARK: URL Building
-    
+
     internal nonisolated static func normalizeHost(_ input: String) -> (scheme: String, host: String, basePath: String) {
         let (scheme, rest) = extractSchemeAndRest(input)
         let (host, basePath) = extractHostAndBasePath(from: rest)
@@ -171,7 +214,7 @@ public actor HTTPClient {
         let regex = try! NSRegularExpression(pattern: #"^([a-zA-Z][a-zA-Z0-9+.-]*)://"#, options: [])
         let nsInput = input as NSString
         let match = regex.firstMatch(in: input, options: [], range: NSRange(location: 0, length: nsInput.length))
-        
+
         if let match, let schemeRange = Range(match.range(at: 1), in: input),
            let wholeRange = Range(match.range, in: input) {
             let scheme = String(input[schemeRange])
@@ -181,7 +224,7 @@ public actor HTTPClient {
             return ("https", input)
         }
     }
-    
+
     internal nonisolated static func extractHostAndBasePath(from rest: String) -> (String, String) {
         let trimmed = rest.trimmingCharacters(in: .whitespacesAndNewlines)
         let parts = trimmed.split(separator: "/", omittingEmptySubsequences: false)
@@ -189,7 +232,7 @@ public actor HTTPClient {
         let basePath = parts.dropFirst().joined(separator: "/")
         return (host, basePath)
     }
-    
+
     internal nonisolated static func normalizeBasePath(_ basePath: String) -> String {
         let normalized = basePath
             .replacingOccurrences(of: "/+", with: "/", options: .regularExpression)
@@ -227,7 +270,7 @@ public actor HTTPClient {
     ) -> URLRequest {
         var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 60)
         request.httpMethod = method.rawValue
-        let mergedHeaders = commonHeaders.merging(headers ?? [:]) { _, custom in custom }
+        let mergedHeaders = defaultHeaders.merging(headers ?? [:]) { _, custom in custom }
         request.allHTTPHeaderFields = mergedHeaders
         request.httpBody = body
         return request

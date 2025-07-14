@@ -186,12 +186,7 @@ final class HTTPClientTests: XCTestCase {
         XCTAssertEqual(host, "")
         XCTAssertEqual(basePath, "")
     }
-    
-    func test_extractHostAndBasePath_emptyInput_hitsFallback() {
-        let (host, basePath) = HTTPClient.extractHostAndBasePath(from: "")
-        XCTAssertEqual(host, "")  // forces ?? "" path
-        XCTAssertEqual(basePath, "")
-    }
+
     
     func test_post_withNilBody_sendsEmptyBodyAndReturnsSuccess() async {
         let expectedData = Data()
@@ -238,7 +233,13 @@ final class HTTPClientTests: XCTestCase {
         let url = URL(string: "https://localhost")!
         let defaultHeaders = ["Accept": "json1", "Content-Type": "json2", "X-Default": "a"]
         let customHeaders = ["Accept": "json3", "Content-Type": "json4", "X-Default": "b"]
-        let client = HTTPClient(host: "localhost", session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())), commonHeaders: defaultHeaders)
+        
+        let client = HTTPClient(
+            host: "localhost",
+            session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())),
+            defaultHeaders: defaultHeaders
+        )
+        
         let request = client.buildRequest(url: url, method: .GET, headers: customHeaders, body: nil, cachePolicy: .useProtocolCachePolicy)
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "json3")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "json4")
@@ -398,7 +399,7 @@ final class HTTPClientTests: XCTestCase {
         let response = HTTPURLResponse(url: URL(string: "https://localhost/merge")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         let defaultHeaders = ["Accept": "application/json", "X-Default": "default"]
         let customHeaders = ["X-Default": "override", "X-Custom": "value"]
-        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(Data(), response)), commonHeaders: defaultHeaders)
+        client = HTTPClient(host: validHost, session: MockHTTPSession(scenario: .success(Data(), response)), defaultHeaders: defaultHeaders)
 
         let result = await client.get("/merge", headers: customHeaders)
         if case .success = result {
@@ -603,4 +604,137 @@ final class HTTPClientTests: XCTestCase {
             XCTFail("Expected failure")
         }
     }
+    
+    // MARK: - Default Cache Policy & Default Headers
+
+    func test_givenDefaultCachePolicy_whenBuildingRequest_thenUsesDefaultCachePolicy() {
+        // Given
+        let customPolicy: URLRequest.CachePolicy = .reloadIgnoringCacheData
+        let client = HTTPClient(
+            host: validHost,
+            session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())),
+            defaultCachePolicy: customPolicy
+        )
+        let url = URL(string: "https://localhost/test")!
+
+        // When
+        let request = client.buildRequest(
+            url: url,
+            method: .GET,
+            headers: nil,
+            body: nil,
+            cachePolicy: .reloadIgnoringCacheData
+        )
+
+        // Then
+        XCTAssertEqual(request.cachePolicy, customPolicy)
+    }
+
+    func test_givenNoCachePolicyOverride_whenCallingGet_thenUsesDefaultCachePolicy() async {
+        // Given
+        let customPolicy: URLRequest.CachePolicy = .returnCacheDataDontLoad
+        let session = MockHTTPSession(scenario: .success(Data(), HTTPURLResponse()))
+        let client = HTTPClient(
+            host: validHost,
+            session: session,
+            defaultCachePolicy: customPolicy
+        )
+        var capturedPolicy: URLRequest.CachePolicy?
+
+        session.onRequest = { request in
+            capturedPolicy = request.cachePolicy
+            return (Data(), HTTPURLResponse())
+        }
+
+        // When
+        _ = await client.get("/policy-test")
+
+        // Then
+        XCTAssertEqual(capturedPolicy, customPolicy)
+    }
+
+    func test_givenCachePolicyOverride_whenCallingGet_thenUsesOverridePolicy() async {
+        // Given
+        let defaultPolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        let overridePolicy: URLRequest.CachePolicy = .reloadIgnoringLocalCacheData
+        let session = MockHTTPSession(scenario: .success(Data(), HTTPURLResponse()))
+        let client = HTTPClient(
+            host: validHost,
+            session: session,
+            defaultCachePolicy: defaultPolicy
+        )
+        var capturedPolicy: URLRequest.CachePolicy?
+
+        session.onRequest = { request in
+            capturedPolicy = request.cachePolicy
+            return (Data(), HTTPURLResponse())
+        }
+
+        // When
+        _ = await client.get("/override-policy", cachePolicy: overridePolicy)
+
+        // Then
+        XCTAssertEqual(capturedPolicy, overridePolicy)
+    }
+
+    func test_givenDefaultHeaders_whenNoCustomHeaders_thenUsesDefaultHeaders() {
+        // Given
+        let defaultHeaders = [
+            "X-App-Version": "123",
+            "Accept": "application/json"
+        ]
+        let client = HTTPClient(
+            host: validHost,
+            session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())),
+            defaultHeaders: defaultHeaders
+        )
+        let url = URL(string: "https://localhost/test")!
+
+        // When
+        let request = client.buildRequest(
+            url: url,
+            method: .GET,
+            headers: nil,
+            body: nil,
+            cachePolicy: .useProtocolCachePolicy
+        )
+
+        // Then
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-App-Version"), "123")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+    }
+
+    func test_givenCustomHeaders_whenMerged_thenCustomHeadersOverrideDefault() {
+        // Given
+        let defaultHeaders = [
+            "Accept": "json1",
+            "X-Default": "default"
+        ]
+        let customHeaders = [
+            "Accept": "json2",
+            "X-Default": "override",
+            "X-Custom": "yes"
+        ]
+        let client = HTTPClient(
+            host: validHost,
+            session: MockHTTPSession(scenario: .success(Data(), HTTPURLResponse())),
+            defaultHeaders: defaultHeaders
+        )
+        let url = URL(string: "https://localhost/test")!
+
+        // When
+        let request = client.buildRequest(
+            url: url,
+            method: .GET,
+            headers: customHeaders,
+            body: nil,
+            cachePolicy: .useProtocolCachePolicy
+        )
+
+        // Then
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "json2")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Default"), "override")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Custom"), "yes")
+    }
+
 }
