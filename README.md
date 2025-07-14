@@ -307,7 +307,7 @@ final class UserRepositoryTests: XCTestCase {
 
 
 **Tip:**
-You can inject either `DefaultHTTPClient` for real networking, or `MockHTTPClient` for tests—just by using the protocol.
+You can inject either `SwiftHTTPClient` for real networking, or `MockHTTPClient` for tests—just by using the protocol.
 
 ---
 
