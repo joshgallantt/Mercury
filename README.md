@@ -7,7 +7,7 @@
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
-[![Coverage](https://img.shields.io/badge/Coverage-98.3%25-brightgreen.svg?style=flat)](#)
+[![Coverage](https://img.shields.io/badge/Coverage-98.5%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
@@ -43,7 +43,7 @@ import SwiftHTTPClient
 Create an HTTP client instance:
 
 ```Swift
-let client = HTTPClient(host: "https://api.example.com")
+let client = SwiftHTTPClient(host: "https://api.example.com")
 ```
 
 Perform a GET request:
@@ -91,10 +91,10 @@ SwiftHTTPClient uses `URLCache` under the hood and supports **cache policy overr
 
 ### Default Behavior
 
-When initializing the `HTTPClient`, you can specify a default `URLRequest.CachePolicy`. This value applies to all requests **unless explicitly overridden**.
+When initializing the `SwiftHTTPClient`, you can specify a default `URLRequest.CachePolicy`. This value applies to all requests **unless explicitly overridden**.
 
 ```swift
-let client = HTTPClient(
+let client = SwiftHTTPClient(
     host: "https://api.example.com",
     defaultCachePolicy: .returnCacheDataElseLoad
 )
@@ -121,7 +121,7 @@ Set commonHeaders when creating your client to send headers with every request.
 Use the headers parameter to override or add headers for a single request. If a key appears in both, the per-request header wins.
 
 ```Swift
-let client = HTTPClient(
+let client = SwiftHTTPClient(
     host: "https://api.example.com",
     commonHeaders: [
         "Content-Type": "application/json",
@@ -166,7 +166,7 @@ https://api.example.com/search?q=swift&limit=10#section2
 
 ## <br><br> Results: HTTPSuccess and HTTPFailure
 
-All HTTPClient methods return a `Result<HTTPSuccess, HTTPFailure>`.
+All SwiftHTTPClient methods return a `Result<HTTPSuccess, HTTPFailure>`.
 
 ### <br> HTTPSuccess
 
@@ -217,5 +217,98 @@ case .failure(let error):
     print("Request failed: \(error.description)")
 }
 ```
+
+## <br><br> Testing: Dependency Injection & Mocking
+
+To write **unit tests** for code that depends on network requests, inject the protocol `HTTPClient` instead of using `SwiftHTTPClient` directly.
+This makes your repositories and services easy to test, and allows you to use the provided `MockHTTPClient` in your test target.
+
+### <br> 1. Use the Protocol in Your Repository
+
+```swift
+import SwiftHTTPClient
+
+final class UserRepository {
+    private let httpClient: HTTPClient
+
+    // Dependency injection via initializer
+    init(httpClient: HTTPClient) {
+        self.httpClient = httpClient
+    }
+
+    func fetchUser(id: String) async -> String? {
+        let result = await httpClient.get("/users/\(id)")
+        switch result {
+        case .success(let success):
+            return String(data: success.data, encoding: .utf8)
+        case .failure:
+            return nil
+        }
+    }
+}
+```
+
+### <br> 2. Use the Mock in Unit Tests
+
+`MockHTTPClient` is included in the main target so you can use it from your app or library’s own test code.
+
+#### <br> Example: Stubbing and Asserting Calls
+
+```swift
+import XCTest
+import SwiftHTTPClient
+
+final class UserRepositoryTests: XCTestCase {
+    func test_givenValidUserId_whenFetchUser_thenReturnsUserString() async {
+        // Given
+        let mock = MockHTTPClient()
+        let expectedData = Data("Jane Doe".utf8)
+        let response = HTTPURLResponse(
+            url: URL(string: "https://api.example.com/users/42")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        await mock.setGetResult(.success(HTTPSuccess(data: expectedData, response: response)))
+        let repo = UserRepository(httpClient: mock)
+
+        // When
+        let result = await repo.fetchUser(id: "42")
+        let calls = await mock.recordedCalls
+
+        // Then
+        XCTAssertEqual(result, "Jane Doe")
+        XCTAssertEqual(
+            calls,
+            [.get(path: "/users/42", headers: nil, queryItems: nil, fragment: nil)]
+        )
+    }
+
+    func test_givenServerFailure_whenFetchUser_thenReturnsNil() async {
+        // Given
+        let mock = MockHTTPClient()
+        await mock.setGetResult(.failure(.server(statusCode: 500, data: nil)))
+        let repo = UserRepository(httpClient: mock)
+
+        // When
+        let result = await repo.fetchUser(id: "500")
+
+        // Then
+        XCTAssertNil(result)
+    }
+}
+```
+
+### <br> 3. Why this matters
+
+* **Fast, reliable tests:** Your tests run without making real HTTP calls.
+* **Easy assertions:** You can check what requests were made using `mock.recordedCalls`.
+* **No global state:** Each test uses its own mock and does not affect others.
+
+
+**Tip:**
+You can inject either `DefaultHTTPClient` for real networking, or `MockHTTPClient` for tests—just by using the protocol.
+
+---
 
 Created by Josh Gallant. MIT License.

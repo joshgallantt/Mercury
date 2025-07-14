@@ -18,8 +18,8 @@ final class HTTPClientTests: XCTestCase {
         session: HTTPSession,
         port: Int? = nil,
         defaultHeaders: [String: String]? = nil
-    ) -> HTTPClient {
-        HTTPClient(
+    ) -> SwiftHTTPClient {
+        SwiftHTTPClient(
             host: host,
             port: port,
             session: session,
@@ -137,7 +137,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenInvalidHost_whenGet_thenReturnsInvalidURLFailure() async throws {
         // Given
         let session = MockHTTPSession(scenario: .error(NSError(domain: "no", code: 1)))
-        let client = HTTPClient(host: "", session: session)
+        let client = SwiftHTTPClient(host: "", session: session)
         
         // When
         let result = await client.get("/path")
@@ -307,7 +307,7 @@ final class HTTPClientTests: XCTestCase {
 
     func test_givenBadHost_whenInit_thenIsValidIsFalse() async {
         // Given: Empty string host causes isValid = false in the catch branch
-        let client = HTTPClient(host: "")
+        let client = SwiftHTTPClient(host: "")
         // Then
         let mirror = Mirror(reflecting: client)
         let hasValidHost = mirror.descendant("hasValidHost") as? Bool
