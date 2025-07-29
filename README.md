@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="Image/mercury.png" alt="Pandora" width="300" />
+<img src="Images/mercury.png" alt="Pandora" width="300" />
 
 > “Let Mercury go swiftly, bearing words not his, but heaven’s.”
 > — Virgil, Aeneid 4.242–243
@@ -15,303 +15,349 @@
 
 </div>
 
-A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, async/await, cache support, and ergonomic request building.
 
-## <br><br> Features
-- Actor-isolated for safe concurrency (Swift 6 actors)
-- Fully async/await API
-- First-class request & response modeling
-- Built-in cache support (URLCache)
-- Automatic URL normalization
-- Simple, ergonomic API for all HTTP verbs
-- Fully Tested
+A modern, type-safe HTTP client for Swift built with Swift Concurrency. Mercury provides a clean, protocol-based API that's perfect for dependency injection and testing.
 
-## <br><br> Installation
+## Features
 
-Add Mercury to your dependencies in Package.swift:
+- ✅ **Swift Concurrency**: Built from the ground up with async/await
+- ✅ **Protocol-Based**: Easy dependency injection and testing with `MercuryProtocol`
+- ✅ **Flexible Payloads**: Support for raw `Data`, `Encodable` objects, and empty bodies
+- ✅ **Customizable Headers**: Per-request and default header support
+- ✅ **Cache Control**: Fine-grained caching policy control
+- ✅ **Query Parameters**: Built-in query string and URL fragment support
+- ✅ **Mock Support**: Comprehensive mocking for unit tests
+- ✅ **Error Handling**: Detailed error types for robust error handling
 
-```Swift
-.package(url: "https://github.com/joshgallantt/Mercury.git", from: "1.0.0")
+## Installation
+
+### Swift Package Manager
+
+Add Mercury to your project using Xcode or by adding it to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/joshgallantt/Mercury.git", from: "1.0.0")
+]
 ```
-Or via Xcode: File > Add Packages… and search for this repo URL.
 
-## <br><br> Basic Usage
+## Quick Start
 
-Import the package:
-
-```Swift
+```swift
 import Mercury
-```
 
-Create an Mercury instance:
-
-```Swift
+// Initialize the client
 let client = Mercury(host: "https://api.example.com")
-```
 
-Perform a GET request:
+// Make a simple GET request
+let result = await client.get("/users")
 
-```Swift
-let result = await client.get("/users/42")
-```
-
-Handle the result:
-
-```Swift
 switch result {
 case .success(let response):
-    print(String(data: response.data, encoding: .utf8) ?? "")
-    print("Status code:", response.response.statusCode)
+    // Handle successful response
+    let data = response.data
+    let statusCode = response.response.statusCode
 case .failure(let error):
-    print("Request failed:", error)
+    // Handle error
+    print("Request failed: \(error)")
 }
 ```
 
-POST with an Encodable body:
+## API Overview
 
-```Swift
-struct Item: Encodable {
+### HTTP Methods
+
+Mercury supports all standard HTTP methods:
+
+```swift
+// GET request
+await client.get("/users")
+
+// POST with raw data
+await client.post("/users", data: userData)
+
+// POST with Encodable object
+await client.post("/users", body: newUser)
+
+// PUT request
+await client.put("/users/123", body: updatedUser)
+
+// PATCH request
+await client.patch("/users/123", body: partialUpdate)
+
+// DELETE request
+await client.delete("/users/123")
+```
+
+### Payload Options
+
+Mercury provides flexible payload handling for different use cases:
+
+#### 1. Raw Data Payloads
+
+Perfect for when you have pre-encoded data or need full control over the request body:
+
+```swift
+let jsonData = """
+{
+    "name": "John Doe",
+    "email": "john@example.com"
+}
+""".data(using: .utf8)!
+
+let result = await client.post("/users", data: jsonData)
+```
+
+#### 2. Encodable Objects
+
+Automatically encode Swift types to JSON:
+
+```swift
+struct User: Encodable {
     let name: String
+    let email: String
 }
 
-let result = await client.post("/items", body: Item(name: "Swift"))
+let newUser = User(name: "John Doe", email: "john@example.com")
+let result = await client.post("/users", body: newUser)
 ```
 
-POST with Data Payload:
+#### 3. Custom Encoding
 
-```Swift
-let payload = "field1=value1&field2=value2".data(using: .utf8)!
+Use custom encoders for specialized formatting:
+
+```swift
+let encoder = JSONEncoder()
+encoder.dateEncodingStrategy = .iso8601
+encoder.keyEncodingStrategy = .convertToSnakeCase
+
 let result = await client.post(
-    "/submit",
-    headers: ["Content-Type": "application/x-www-form-urlencoded"],
-    data: payload
+    "/users",
+    body: newUser,
+    encoder: encoder
 )
 ```
 
-## <br><br> Cache Control
+#### 4. Empty Bodies
 
-Mercury uses `URLCache` under the hood and supports **cache policy overrides** per request.
+For requests that don't require a body:
 
-### Default Behavior
+```swift
+// All methods support nil/empty bodies
+await client.get("/users")
+await client.delete("/users/123")  // DELETE with no body
+await client.post("/users/123/activate")  // POST with no body
+```
 
-When initializing the `Mercury`, you can specify a default `URLRequest.CachePolicy`. This value applies to all requests **unless explicitly overridden**.
+### Headers and Customization
+
+#### Default Headers
+
+Set headers that apply to all requests:
 
 ```swift
 let client = Mercury(
     host: "https://api.example.com",
-    defaultCachePolicy: .returnCacheDataElseLoad
-)
-```
-
-### Per-Request Override
-
-You can override the cache policy for **any** individual request:
-
-```swift
-let result = await client.get(
-    "/weather/today",
-    cachePolicy: .reloadIgnoringLocalCacheData
-)
-```
-
-This allows for fine-grained control without affecting the global configuration.
-
-
-## <br><br> Headers
-
-Set commonHeaders when creating your client to send headers with every request.
-
-Use the headers parameter to override or add headers for a single request. If a key appears in both, the per-request header wins.
-
-```Swift
-let client = Mercury(
-    host: "https://api.example.com",
-    commonHeaders: [
+    defaultHeaders: [
+        "Accept": "application/json",
         "Content-Type": "application/json",
-        "X-Client-Version": "1.0"
+        "Authorization": "Bearer \(token)"
     ]
 )
-
-let result = await client.post(
-    "/upload",
-    headers: [
-        "Content-Type": "image/png", // overrides common header
-        "X-Request-ID": "abc-123"    // adds an extra header
-    ],
-    data: imageData
-)
 ```
 
-## <br><br> Query Parameters and URL Fragments
+#### Per-Request Headers
 
-You can add query parameters and URL fragments to any request.
-
-Use the queryItems parameter to pass query parameters as a `[String: String]` dictionary.
-
-Use the fragment parameter to append a fragment to the URL.
-
-```Swift
-let result = await client.get(
-    "/search",
-    queryItems: [
-        "q": "swift",
-        "limit": "10"
-    ],
-    fragment: "section2"
-)
-```
-
-This produces a request to:
-
-```Swift
-https://api.example.com/search?q=swift&limit=10#section2
-```
-
-## <br><br> Results: MercurySuccess and MercuryError
-
-All Mercury methods return a `Result<HTTPSuccess, HTTPFailure>`.
-
-### <br> HTTPSuccess
-
-Represents a successful HTTP response (2xx). Contains:
-
-```Swift
-struct HTTPSuccess: Sendable {
-    let data: Data
-    let response: HTTPURLResponse
-}
-```
-
-- data — the response body as Data
-- response — the HTTPURLResponse (status code, headers, etc)
-
-### <br> HTTPFailure
-
-Represents a failed request. Possible cases:
-```Swift
-enum HTTPFailure: Error, CustomStringConvertible, Sendable {
-    case invalidURL
-    case server(statusCode: Int, data: Data?)
-    case invalidResponse
-    case transport(Error)
-    case encoding(Error)
-}
-```
-
-- .invalidURL — The URL is invalid or could not be constructed.
-- .server(statusCode:data:) — The server returned a non-2xx status code (with optional error body).
-- .invalidResponse — Response was missing or malformed.
-- .transport(Error) — A transport-layer error occurred (such as network down, timeout).
-- .encoding(Error) — Failed to encode the request body.
-
-All HTTPFailure values have a human-readable .description for easy logging.
-
-#### <br> Example usage
-
-```Swift
-let result = await client.get("/resource")
-
-switch result {
-case .success(let output):
-    print("Data: \(output.data)")
-    print("Status code: \(output.response.statusCode)")
-    
-case .failure(let error):
-    print("Request failed: \(error.description)")
-}
-```
-
-## <br><br> Testing: Dependency Injection & Mocking
-
-To write **unit tests** for code that depends on network requests, inject the protocol `MercuryProtocol` instead of using `Mercury` directly.
-This makes your repositories and services easy to test, and allows you to use the provided `MockMercury` in your test target.
-
-### <br> 1. Use the Protocol in Your Repository
+Override or add headers for specific requests:
 
 ```swift
-import Mercury
+await client.get(
+    "/users",
+    headers: [
+        "X-Request-ID": UUID().uuidString,
+        "Accept": "application/vnd.api+json"  // Overrides default
+    ]
+)
+```
 
-final class UserRepository {
-    private let httpClient: MercuryProtocol
+#### Header Merging
 
-    // Dependency injection via initializer
-    init(httpClient: MercuryProtocol) {
-        self.httpClient = httpClient
+Per-request headers are merged with default headers, with per-request headers taking precedence:
+
+```swift
+// Default headers: ["Accept": "application/json", "Authorization": "Bearer token"]
+// Request headers: ["Accept": "text/plain", "X-Custom": "value"]
+// Final headers: ["Accept": "text/plain", "Authorization": "Bearer token", "X-Custom": "value"]
+```
+
+### Cache Policies
+
+Control caching behavior at the client and request level:
+
+#### Default Cache Policy
+
+Set a default policy for all requests:
+
+```swift
+let client = Mercury(
+    host: "https://api.example.com",
+    defaultCachePolicy: .reloadIgnoringLocalCacheData
+)
+```
+
+#### Per-Request Cache Policy
+
+Override caching for specific requests:
+
+```swift
+// Use cache if available, otherwise load from network
+await client.get("/users", cachePolicy: .returnCacheDataElseLoad)
+
+// Always reload from network
+await client.get("/users", cachePolicy: .reloadIgnoringLocalCacheData)
+
+// Only use cached data
+await client.get("/users", cachePolicy: .returnCacheDataDontLoad)
+```
+
+### Query Parameters and URL Fragments
+
+Build complex URLs with query parameters and fragments:
+
+```swift
+await client.get(
+    "/users",
+    queryItems: [
+        "page": "2",
+        "limit": "20",
+        "sort": "name"
+    ],
+    fragment: "results"
+)
+// Results in: /users?page=2&limit=20&sort=name#results
+```
+
+### Advanced Configuration
+
+#### Custom Ports and Base Paths
+
+```swift
+// With custom port
+let client = Mercury(host: "https://api.example.com:8443")
+
+// With base path
+let client = Mercury(host: "https://api.example.com/v2")
+
+// Both
+let client = Mercury(host: "https://api.example.com:8443/api/v2")
+```
+
+#### Host Parsing
+
+Mercury intelligently parses various host formats:
+
+```swift
+Mercury(host: "https://api.example.com")           // Standard URL
+Mercury(host: "api.example.com")                   // Defaults to HTTPS
+Mercury(host: "http://localhost:3000")             // Custom protocol and port
+Mercury(host: "https://api.example.com/api/v1")    // With base path
+```
+
+## Error Handling
+
+Mercury provides detailed error information through the `MercuryError` enum:
+
+```swift
+let result = await client.get("/users")
+
+switch result {
+case .success(let response):
+    // Handle success
+    break
+case .failure(let error):
+    switch error {
+    case .invalidURL:
+        print("The URL could not be constructed")
+    case .server(let statusCode, let data):
+        print("Server error: \(statusCode)")
+        if let data = data, let message = String(data: data, encoding: .utf8) {
+            print("Error details: \(message)")
+        }
+    case .invalidResponse:
+        print("Response was not a valid HTTP response")
+    case .transport(let error):
+        print("Network error: \(error.localizedDescription)")
+    case .encoding(let error):
+        print("Failed to encode request body: \(error.localizedDescription)")
     }
+}
+```
 
-    func fetchUser(id: String) async -> String? {
-        let result = await httpClient.get("/users/\(id)")
-        switch result {
-        case .success(let success):
-            return String(data: success.data, encoding: .utf8)
-        case .failure:
-            return nil
+## Testing
+
+Mercury includes `MockMercury` for comprehensive testing support:
+
+```swift
+import XCTest
+@testable import Mercury
+
+final class UserRepositoryTests: XCTestCase {
+    
+    func test_givenValidUser_whenCreateUser_thenReturnsSuccess() async throws {
+        // Given
+        let mock = MockMercury()
+        let expectedResponse = HTTPURLResponse(
+            url: URL(string: "https://api.example.com")!,
+            statusCode: 201,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        
+        await mock.setPostResult(.success(
+            MercurySuccess(data: Data(), response: expectedResponse)
+        ))
+        
+        let repository = UserRepository(client: mock)
+        
+        // When
+        let result = await repository.createUser(name: "John", email: "john@example.com")
+        
+        // Then
+        XCTAssertTrue(result.isSuccess)
+        
+        let calls = await mock.recordedCalls
+        XCTAssertEqual(calls.count, 1)
+        
+        if case .postEncodable(let path, _, _, _) = calls.first {
+            XCTAssertEqual(path, "/users")
+        } else {
+            XCTFail("Expected postEncodable call")
         }
     }
 }
 ```
 
-### <br> 2. Use the Mock in Unit Tests
+### Mock Capabilities
 
-`MockMercury` is included in the main target so you can use it from your app or library’s own test code.
-
-#### <br> Example: Stubbing and Asserting Calls
-
-```swift
-import XCTest
-import Mercury
-
-final class UserRepositoryTests: XCTestCase {
-    func test_givenValidUserId_whenFetchUser_thenReturnsUserString() async {
-        // Given
-        let mock = MockMercury()
-        let expectedData = Data("Jane Doe".utf8)
-        let response = HTTPURLResponse(
-            url: URL(string: "https://api.example.com/users/42")!,
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: nil
-        )!
-        await mock.setGetResult(.success(HTTPSuccess(data: expectedData, response: response)))
-        let repo = UserRepository(httpClient: mock)
-
-        // When
-        let result = await repo.fetchUser(id: "42")
-        let calls = await mock.recordedCalls
-
-        // Then
-        XCTAssertEqual(result, "Jane Doe")
-        XCTAssertEqual(
-            calls,
-            [.get(path: "/users/42", headers: nil, queryItems: nil, fragment: nil)]
-        )
-    }
-
-    func test_givenServerFailure_whenFetchUser_thenReturnsNil() async {
-        // Given
-        let mock = MockMercury()
-        await mock.setGetResult(.failure(.server(statusCode: 500, data: nil)))
-        let repo = UserRepository(httpClient: mock)
-
-        // When
-        let result = await repo.fetchUser(id: "500")
-
-        // Then
-        XCTAssertNil(result)
-    }
-}
-```
-
-### <br> 3. Why this matters
-
-* **Fast, reliable tests:** Your tests run without making real HTTP calls.
-* **Easy assertions:** You can check what requests were made using `mock.recordedCalls`.
-* **No global state:** Each test uses its own mock and does not affect others.
+- ✅ **Stub Results**: Set custom responses for each HTTP method
+- ✅ **Call Recording**: Inspect all calls made to the mock
+- ✅ **Method-Specific**: Different stubs for GET, POST, PUT, PATCH, DELETE
+- ✅ **Parameter Capture**: Verify paths, headers, query items, and fragments
 
 
-**Tip:**
-You can inject either `Mercury` for real networking, or `MockMercury` for tests—just by using the protocol.
+## Architecture
+
+Mercury follows Clean Architecture principles and SOLID design patterns:
+
+- **Protocol-Based**: `MercuryProtocol` enables easy dependency injection
+- **Testable**: Built-in mocking support for comprehensive testing
+- **Concurrent**: Safe for use with Swift Concurrency (`Sendable` conformance)
+- **Type-Safe**: Leverages Swift's type system for compile-time safety
+
+## License
+
+Mercury is available under the MIT License. See the [LICENSE](./LICENSE) file for more details.
 
 ---
 
-Created by Josh Gallant. MIT License.
+By Josh Gallant, Made with ❤️ for the Swift community
