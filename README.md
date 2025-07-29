@@ -1,6 +1,9 @@
 <div align="center">
 
-<h1>Mercury</h1>
+<img src="Image/mercury.png" alt="Pandora" width="300" />
+
+> “Let Mercury go swiftly, bearing words not his, but heaven’s.”
+> — Virgil, Aeneid 4.242–243
 
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2016%2B%20%7C%20iPadOS%2016%2B%20%7C%20macOS%2013%2B%20%7C%20watchOS%209%2B%20%7C%20tvOS%2016%2B%20%7C%20visionOS%201%2B-blue.svg?style=flat)](#requirements)
 <br>
@@ -25,10 +28,10 @@ A modern and lightweight Swift HTTP client featuring Swift 6 actor isolation, as
 
 ## <br><br> Installation
 
-Add SwiftHTTPClient to your dependencies in Package.swift:
+Add Mercury to your dependencies in Package.swift:
 
 ```Swift
-.package(url: "https://github.com/joshgallantt/SwiftHTTPClient.git", from: "1.0.0")
+.package(url: "https://github.com/joshgallantt/Mercury.git", from: "1.0.0")
 ```
 Or via Xcode: File > Add Packages… and search for this repo URL.
 
@@ -37,13 +40,13 @@ Or via Xcode: File > Add Packages… and search for this repo URL.
 Import the package:
 
 ```Swift
-import SwiftHTTPClient
+import Mercury
 ```
 
-Create an HTTP client instance:
+Create an Mercury instance:
 
 ```Swift
-let client = SwiftHTTPClient(host: "https://api.example.com")
+let client = Mercury(host: "https://api.example.com")
 ```
 
 Perform a GET request:
@@ -87,14 +90,14 @@ let result = await client.post(
 
 ## <br><br> Cache Control
 
-SwiftHTTPClient uses `URLCache` under the hood and supports **cache policy overrides** per request.
+Mercury uses `URLCache` under the hood and supports **cache policy overrides** per request.
 
 ### Default Behavior
 
-When initializing the `SwiftHTTPClient`, you can specify a default `URLRequest.CachePolicy`. This value applies to all requests **unless explicitly overridden**.
+When initializing the `Mercury`, you can specify a default `URLRequest.CachePolicy`. This value applies to all requests **unless explicitly overridden**.
 
 ```swift
-let client = SwiftHTTPClient(
+let client = Mercury(
     host: "https://api.example.com",
     defaultCachePolicy: .returnCacheDataElseLoad
 )
@@ -121,7 +124,7 @@ Set commonHeaders when creating your client to send headers with every request.
 Use the headers parameter to override or add headers for a single request. If a key appears in both, the per-request header wins.
 
 ```Swift
-let client = SwiftHTTPClient(
+let client = Mercury(
     host: "https://api.example.com",
     commonHeaders: [
         "Content-Type": "application/json",
@@ -164,9 +167,9 @@ This produces a request to:
 https://api.example.com/search?q=swift&limit=10#section2
 ```
 
-## <br><br> Results: HTTPSuccess and HTTPFailure
+## <br><br> Results: MercurySuccess and MercuryError
 
-All SwiftHTTPClient methods return a `Result<HTTPSuccess, HTTPFailure>`.
+All Mercury methods return a `Result<HTTPSuccess, HTTPFailure>`.
 
 ### <br> HTTPSuccess
 
@@ -220,19 +223,19 @@ case .failure(let error):
 
 ## <br><br> Testing: Dependency Injection & Mocking
 
-To write **unit tests** for code that depends on network requests, inject the protocol `HTTPClient` instead of using `SwiftHTTPClient` directly.
-This makes your repositories and services easy to test, and allows you to use the provided `MockHTTPClient` in your test target.
+To write **unit tests** for code that depends on network requests, inject the protocol `MercuryProtocol` instead of using `Mercury` directly.
+This makes your repositories and services easy to test, and allows you to use the provided `MockMercury` in your test target.
 
 ### <br> 1. Use the Protocol in Your Repository
 
 ```swift
-import SwiftHTTPClient
+import Mercury
 
 final class UserRepository {
-    private let httpClient: HTTPClient
+    private let httpClient: MercuryProtocol
 
     // Dependency injection via initializer
-    init(httpClient: HTTPClient) {
+    init(httpClient: MercuryProtocol) {
         self.httpClient = httpClient
     }
 
@@ -250,18 +253,18 @@ final class UserRepository {
 
 ### <br> 2. Use the Mock in Unit Tests
 
-`MockHTTPClient` is included in the main target so you can use it from your app or library’s own test code.
+`MockMercury` is included in the main target so you can use it from your app or library’s own test code.
 
 #### <br> Example: Stubbing and Asserting Calls
 
 ```swift
 import XCTest
-import SwiftHTTPClient
+import Mercury
 
 final class UserRepositoryTests: XCTestCase {
     func test_givenValidUserId_whenFetchUser_thenReturnsUserString() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         let expectedData = Data("Jane Doe".utf8)
         let response = HTTPURLResponse(
             url: URL(string: "https://api.example.com/users/42")!,
@@ -286,7 +289,7 @@ final class UserRepositoryTests: XCTestCase {
 
     func test_givenServerFailure_whenFetchUser_thenReturnsNil() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         await mock.setGetResult(.failure(.server(statusCode: 500, data: nil)))
         let repo = UserRepository(httpClient: mock)
 
@@ -307,7 +310,7 @@ final class UserRepositoryTests: XCTestCase {
 
 
 **Tip:**
-You can inject either `SwiftHTTPClient` for real networking, or `MockHTTPClient` for tests—just by using the protocol.
+You can inject either `Mercury` for real networking, or `MockMercury` for tests—just by using the protocol.
 
 ---
 
