@@ -1,6 +1,6 @@
 //
 //  BuildHost.swift
-//  SwiftHTTPClient
+//  Mercury
 //
 //  Created by Josh Gallant on 14/07/2025.
 //

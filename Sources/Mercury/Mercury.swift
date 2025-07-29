@@ -1,14 +1,14 @@
 //
-//  SwiftHTTPClient.swift
-//  SwiftHTTPClient
+//  Mercury.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 12/07/2025.
 //
 
 import Foundation
 
-public actor SwiftHTTPClient: HTTPClient {
-    private let session: HTTPSession
+public actor Mercury: MercuryProtocol {
+    private let session: MercurySession
     private let scheme: String
     private let host: String
     private let port: Int?
@@ -20,7 +20,7 @@ public actor SwiftHTTPClient: HTTPClient {
     // MARK: - Initializers
 
     
-    /// Initializes a new `HTTPClient` with default `URLSession` configuration.
+    /// Initializes a new `MercuryProtocol` with default `URLSession` configuration.
     ///
     /// - Parameters:
     ///   - host: A string representing the base URL or hostname.
@@ -46,7 +46,7 @@ public actor SwiftHTTPClient: HTTPClient {
             let (scheme, host, hostPort, basePath) = try BuildHost.execute(host)
             parsedScheme = scheme
             parsedHost = host
-            parsedPort = port ?? hostPort  // Explicit port argument wins
+            parsedPort = port ?? hostPort
             parsedBasePath = basePath
             isValid = !host.isEmpty
         } catch {
@@ -70,7 +70,7 @@ public actor SwiftHTTPClient: HTTPClient {
     internal init(
         host: String,
         port: Int? = nil,
-        session: HTTPSession,
+        session: MercurySession,
         defaultHeaders: [String: String] = [
             "Accept": "application/json",
             "Content-Type": "application/json"
@@ -114,14 +114,14 @@ public actor SwiftHTTPClient: HTTPClient {
     ///   - queryItems: Optional query parameters.
     ///   - fragment: Optional fragment to append to the URL.
     ///   - cachePolicy: Optional cache policy for this request.
-    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
+    /// - Returns: A result wrapping either success (`MercurySuccess`) or failure (`MercuryError`).
     public func get(
         _ path: String,
         headers: [String: String]? = nil,
         queryItems: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         return await request(
             path: path,
             method: .GET,
@@ -141,7 +141,7 @@ public actor SwiftHTTPClient: HTTPClient {
     ///   - data: Optional raw body data to send.
     ///   - fragment: Optional fragment to append to the URL.
     ///   - cachePolicy: Optional cache policy for this request.
-    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
+    /// - Returns: A result wrapping either success (`MercurySuccess`) or failure (`MercuryError`).
     public func post(
         _ path: String,
         headers: [String: String]? = nil,
@@ -149,7 +149,7 @@ public actor SwiftHTTPClient: HTTPClient {
         data: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         return await request(
             path: path,
             method: .POST,
@@ -171,7 +171,7 @@ public actor SwiftHTTPClient: HTTPClient {
     ///   - fragment: Optional fragment to append to the URL.
     ///   - cachePolicy: Optional cache policy for this request.
     ///   - encoder: JSON encoder to use for encoding the body. Defaults to `JSONEncoder()`.
-    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
+    /// - Returns: A result wrapping either success (`MercurySuccess`) or failure (`MercuryError`).
     public func post<T: Encodable>(
         _ path: String,
         headers: [String: String]? = nil,
@@ -180,7 +180,7 @@ public actor SwiftHTTPClient: HTTPClient {
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
         encoder: JSONEncoder = JSONEncoder()
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         do {
             let data = try encoder.encode(body)
             return await self.post(
@@ -205,7 +205,7 @@ public actor SwiftHTTPClient: HTTPClient {
     ///   - body: Optional raw body data to send.
     ///   - fragment: Optional fragment to append to the URL.
     ///   - cachePolicy: Optional cache policy for this request.
-    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
+    /// - Returns: A result wrapping either success (`MercurySuccess`) or failure (`MercuryError`).
     public func put(
         _ path: String,
         headers: [String: String]? = nil,
@@ -213,7 +213,7 @@ public actor SwiftHTTPClient: HTTPClient {
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         return await request(
             path: path,
             method: .PUT,
@@ -235,7 +235,7 @@ public actor SwiftHTTPClient: HTTPClient {
     ///   - body: Optional raw body data to send.
     ///   - fragment: Optional fragment to append to the URL.
     ///   - cachePolicy: Optional cache policy for this request.
-    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
+    /// - Returns: A result wrapping either success (`MercurySuccess`) or failure (`MercuryError`).
     public func patch(
         _ path: String,
         headers: [String: String]? = nil,
@@ -243,7 +243,7 @@ public actor SwiftHTTPClient: HTTPClient {
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         return await request(
             path: path,
             method: .PATCH,
@@ -265,7 +265,7 @@ public actor SwiftHTTPClient: HTTPClient {
     ///   - body: Optional raw body data to send.
     ///   - fragment: Optional fragment to append to the URL.
     ///   - cachePolicy: Optional cache policy for this request.
-    /// - Returns: A result wrapping either success (`HTTPSuccess`) or failure (`HTTPFailure`).
+    /// - Returns: A result wrapping either success (`MercurySuccess`) or failure (`MercuryError`).
     public func delete(
         _ path: String,
         headers: [String: String]? = nil,
@@ -273,7 +273,7 @@ public actor SwiftHTTPClient: HTTPClient {
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         return await request(
             path: path,
             method: .DELETE,
@@ -306,7 +306,7 @@ public actor SwiftHTTPClient: HTTPClient {
 
     internal func buildRequest(
         url: URL,
-        method: HTTPMethod,
+        method: MercuryMethod,
         headers: [String: String]?,
         body: Data?,
         cachePolicy: URLRequest.CachePolicy
@@ -321,13 +321,13 @@ public actor SwiftHTTPClient: HTTPClient {
 
     internal func request(
         path: String,
-        method: HTTPMethod,
+        method: MercuryMethod,
         headers: [String: String]? = nil,
         queryItems: [String: String]? = nil,
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         guard hasValidHost,
               let url = buildURL(path: path, queryItems: queryItems, fragment: fragment),
               let urlHost = url.host, !urlHost.isEmpty else {
@@ -337,7 +337,7 @@ public actor SwiftHTTPClient: HTTPClient {
         return await send(request: request)
     }
 
-    private func send(request: URLRequest) async -> Result<HTTPSuccess, HTTPFailure> {
+    private func send(request: URLRequest) async -> Result<MercurySuccess, MercuryError> {
         let session = self.session
         do {
             let (data, response) = try await session.data(for: request)
@@ -345,7 +345,7 @@ public actor SwiftHTTPClient: HTTPClient {
                 return .failure(.invalidResponse)
             }
             if (200...299).contains(httpResponse.statusCode) {
-                return .success(HTTPSuccess(data: data, response: httpResponse))
+                return .success(MercurySuccess(data: data, response: httpResponse))
             } else {
                 return .failure(.server(statusCode: httpResponse.statusCode, data: data))
             }

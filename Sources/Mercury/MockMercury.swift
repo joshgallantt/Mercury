@@ -1,42 +1,42 @@
 //
-//  MockHTTPClient.swift
-//  SwiftHTTPClient
+//  MockMercury.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 14/07/2025.
 //
 
 import Foundation
 
-/// A mock implementation of `HTTPClient` for use in unit and integration tests.
+/// A mock implementation of `MercuryProtocol` for use in unit and integration tests.
 ///
-/// `MockHTTPClient` allows developers to stub HTTP responses and record calls made to HTTP methods.
+/// `MockMercury` allows developers to stub HTTP responses and record calls made to HTTP methods.
 /// This type is intended **only for testing** and should not be used in production code. Use this
 /// mock to isolate your repositories, services, or view models from real networking in your tests.
 ///
 /// Example usage:
 /// ```swift
-/// let mock = MockHTTPClient()
+/// let mock = MockMercury()
 /// await mock.setGetResult(.success(...))
 /// // Inject into your repository or service for testing.
 /// ```
-public actor MockHTTPClient: HTTPClient {
+public actor MockMercury: MercuryProtocol {
 
     // MARK: - Stubbed Results
 
     /// The stubbed result to return for `get` calls.
-    private var getResult: Result<HTTPSuccess, HTTPFailure> = .failure(.invalidURL)
+    private var getResult: Result<MercurySuccess, MercuryError> = .failure(.invalidURL)
 
     /// The stubbed result to return for `post` calls.
-    private var postResult: Result<HTTPSuccess, HTTPFailure> = .failure(.invalidURL)
+    private var postResult: Result<MercurySuccess, MercuryError> = .failure(.invalidURL)
 
     /// The stubbed result to return for `put` calls.
-    private var putResult: Result<HTTPSuccess, HTTPFailure> = .failure(.invalidURL)
+    private var putResult: Result<MercurySuccess, MercuryError> = .failure(.invalidURL)
 
     /// The stubbed result to return for `patch` calls.
-    private var patchResult: Result<HTTPSuccess, HTTPFailure> = .failure(.invalidURL)
+    private var patchResult: Result<MercurySuccess, MercuryError> = .failure(.invalidURL)
 
     /// The stubbed result to return for `delete` calls.
-    private var deleteResult: Result<HTTPSuccess, HTTPFailure> = .failure(.invalidURL)
+    private var deleteResult: Result<MercurySuccess, MercuryError> = .failure(.invalidURL)
 
     // MARK: - Recorded Calls
 
@@ -59,35 +59,35 @@ public actor MockHTTPClient: HTTPClient {
     // MARK: - Public Async Setters
 
     /// Sets the stubbed result for `get` calls.
-    public func setGetResult(_ value: Result<HTTPSuccess, HTTPFailure>) async {
+    public func setGetResult(_ value: Result<MercurySuccess, MercuryError>) async {
         getResult = value
     }
 
     /// Sets the stubbed result for `post` calls.
-    public func setPostResult(_ value: Result<HTTPSuccess, HTTPFailure>) async {
+    public func setPostResult(_ value: Result<MercurySuccess, MercuryError>) async {
         postResult = value
     }
 
     /// Sets the stubbed result for `put` calls.
-    public func setPutResult(_ value: Result<HTTPSuccess, HTTPFailure>) async {
+    public func setPutResult(_ value: Result<MercurySuccess, MercuryError>) async {
         putResult = value
     }
 
     /// Sets the stubbed result for `patch` calls.
-    public func setPatchResult(_ value: Result<HTTPSuccess, HTTPFailure>) async {
+    public func setPatchResult(_ value: Result<MercurySuccess, MercuryError>) async {
         patchResult = value
     }
 
     /// Sets the stubbed result for `delete` calls.
-    public func setDeleteResult(_ value: Result<HTTPSuccess, HTTPFailure>) async {
+    public func setDeleteResult(_ value: Result<MercurySuccess, MercuryError>) async {
         deleteResult = value
     }
 
-    // MARK: - HTTPClient
+    // MARK: - MercuryProtocol
 
     /// Simulates an HTTP GET request and records the call.
     ///
-    /// - Parameters are as documented in `HTTPClient`.
+    /// - Parameters are as documented in `MercuryProtocol`.
     /// - Returns: The value of `getResult`, which can be set in your tests.
     public func get(
         _ path: String,
@@ -95,14 +95,14 @@ public actor MockHTTPClient: HTTPClient {
         queryItems: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         recordedCalls.append(.get(path: path, headers: headers, queryItems: queryItems, fragment: fragment))
         return getResult
     }
 
     /// Simulates an HTTP POST request with raw data and records the call.
     ///
-    /// - Parameters are as documented in `HTTPClient`.
+    /// - Parameters are as documented in `MercuryProtocol`.
     /// - Returns: The value of `postResult`, which can be set in your tests.
     public func post(
         _ path: String,
@@ -111,14 +111,14 @@ public actor MockHTTPClient: HTTPClient {
         data: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         recordedCalls.append(.post(path: path, headers: headers, queryItems: queryItems, data: data, fragment: fragment))
         return postResult
     }
 
     /// Simulates an HTTP POST request with an Encodable body and records the call.
     ///
-    /// - Parameters are as documented in `HTTPClient`.
+    /// - Parameters are as documented in `MercuryProtocol`.
     /// - Returns: The value of `postResult`, which can be set in your tests.
     public func post<T: Encodable>(
         _ path: String,
@@ -128,14 +128,14 @@ public actor MockHTTPClient: HTTPClient {
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
         encoder: JSONEncoder = JSONEncoder()
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         recordedCalls.append(.postEncodable(path: path, headers: headers, queryItems: queryItems, fragment: fragment))
         return postResult
     }
 
     /// Simulates an HTTP PUT request and records the call.
     ///
-    /// - Parameters are as documented in `HTTPClient`.
+    /// - Parameters are as documented in `MercuryProtocol`.
     /// - Returns: The value of `putResult`, which can be set in your tests.
     public func put(
         _ path: String,
@@ -144,14 +144,14 @@ public actor MockHTTPClient: HTTPClient {
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         recordedCalls.append(.put(path: path, headers: headers, queryItems: queryItems, data: body, fragment: fragment))
         return putResult
     }
 
     /// Simulates an HTTP PATCH request and records the call.
     ///
-    /// - Parameters are as documented in `HTTPClient`.
+    /// - Parameters are as documented in `MercuryProtocol`.
     /// - Returns: The value of `patchResult`, which can be set in your tests.
     public func patch(
         _ path: String,
@@ -160,14 +160,14 @@ public actor MockHTTPClient: HTTPClient {
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         recordedCalls.append(.patch(path: path, headers: headers, queryItems: queryItems, data: body, fragment: fragment))
         return patchResult
     }
 
     /// Simulates an HTTP DELETE request and records the call.
     ///
-    /// - Parameters are as documented in `HTTPClient`.
+    /// - Parameters are as documented in `MercuryProtocol`.
     /// - Returns: The value of `deleteResult`, which can be set in your tests.
     public func delete(
         _ path: String,
@@ -176,7 +176,7 @@ public actor MockHTTPClient: HTTPClient {
         body: Data? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<HTTPSuccess, HTTPFailure> {
+    ) async -> Result<MercurySuccess, MercuryError> {
         recordedCalls.append(.delete(path: path, headers: headers, queryItems: queryItems, data: body, fragment: fragment))
         return deleteResult
     }

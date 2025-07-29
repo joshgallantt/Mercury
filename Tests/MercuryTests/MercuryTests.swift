@@ -1,25 +1,25 @@
 //
-//  HTTPClientTests 2.swift
-//  SwiftHTTPClient
+//  MercuryTests.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 14/07/2025.
 //
 
 
 import XCTest
-@testable import SwiftHTTPClient
+@testable import Mercury
 
-final class HTTPClientTests: XCTestCase {
+final class MercuryTests: XCTestCase {
     
     // MARK: - Helper
     
     func makeClient(
         host: String = "https://host.com",
-        session: HTTPSession,
+        session: MercurySession,
         port: Int? = nil,
         defaultHeaders: [String: String]? = nil
-    ) -> SwiftHTTPClient {
-        SwiftHTTPClient(
+    ) -> Mercury {
+        Mercury(
             host: host,
             port: port,
             session: session,
@@ -50,7 +50,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenSuccessStatus_whenGet_thenReturnsHTTPSuccess() async throws {
         // Given
         let (data, response) = makeMockResponse(statusCode: 200, body: "yay")
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         
         // When
@@ -69,7 +69,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenNonSuccessStatus_whenGet_thenReturnsServerFailure() async throws {
         // Given
         let (data, response) = makeMockResponse(statusCode: 404, body: "not found")
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         
         // When
@@ -92,7 +92,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenTransportError_whenGet_thenReturnsTransportFailure() async throws {
         // Given
         let error = NSError(domain: "Test", code: 999)
-        let session = MockHTTPSession(scenario: .error(error))
+        let session = MockMercurySession(scenario: .error(error))
         let client = makeClient(session: session)
         
         // When
@@ -115,7 +115,7 @@ final class HTTPClientTests: XCTestCase {
         // Given
         let data = Data("nohttp".utf8)
         let response = URLResponse(url: URL(string: "https://host.com")!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         
         // When
@@ -136,8 +136,8 @@ final class HTTPClientTests: XCTestCase {
     
     func test_givenInvalidHost_whenGet_thenReturnsInvalidURLFailure() async throws {
         // Given
-        let session = MockHTTPSession(scenario: .error(NSError(domain: "no", code: 1)))
-        let client = SwiftHTTPClient(host: "", session: session)
+        let session = MockMercurySession(scenario: .error(NSError(domain: "no", code: 1)))
+        let client = Mercury(host: "", session: session)
         
         // When
         let result = await client.get("/path")
@@ -161,7 +161,7 @@ final class HTTPClientTests: XCTestCase {
                 throw NSError(domain: "EncodingFail", code: 1234)
             }
         }
-        let session = MockHTTPSession(scenario: .error(NSError(domain: "n/a", code: 0)))
+        let session = MockMercurySession(scenario: .error(NSError(domain: "n/a", code: 0)))
         let client = makeClient(session: session)
         let bad = Bad()
         let result = await client.post("/encode", body: bad)
@@ -180,7 +180,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenHeaders_whenRequest_thenMergedWithDefaultHeaders() async throws {
         // Given
         let (data, response) = makeMockResponse(statusCode: 200)
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session, defaultHeaders: ["X-Default": "1"])
         var capturedHeaders: [String: String]?
         session.onRequest = { request in
@@ -199,7 +199,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenPostWithData_whenSuccess_thenReturnsSuccess() async throws {
         // Given
         let (data, response) = makeMockResponse(statusCode: 201)
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         let body = Data("body".utf8)
         
@@ -219,7 +219,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenPutPatchDelete_whenSuccess_thenReturnsSuccess() async throws {
         // Given
         let (data, response) = makeMockResponse(statusCode: 204)
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         let body = Data("x".utf8)
         
@@ -243,7 +243,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenQueryItemsAndFragment_whenGet_thenURLIncludesQueryAndFragment() async throws {
         // Given
         let (data, response) = makeMockResponse()
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         var capturedURL: URL?
         session.onRequest = { request in
@@ -270,7 +270,7 @@ final class HTTPClientTests: XCTestCase {
     func test_givenCustomPort_whenClientInitializes_thenURLIncludesPort() async throws {
         // Given
         let (data, response) = makeMockResponse()
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(host: "https://host.com:8888", session: session)
         var capturedURL: URL?
         session.onRequest = { request in
@@ -291,7 +291,7 @@ final class HTTPClientTests: XCTestCase {
             let value: String
         }
         let (data, response) = makeMockResponse(statusCode: 201)
-        let session = MockHTTPSession(scenario: .success(data, response))
+        let session = MockMercurySession(scenario: .success(data, response))
         let client = makeClient(session: session)
         let good = Good(value: "abc")
         
@@ -307,7 +307,7 @@ final class HTTPClientTests: XCTestCase {
 
     func test_givenBadHost_whenInit_thenIsValidIsFalse() async {
         // Given: Empty string host causes isValid = false in the catch branch
-        let client = SwiftHTTPClient(host: "")
+        let client = Mercury(host: "")
         // Then
         let mirror = Mirror(reflecting: client)
         let hasValidHost = mirror.descendant("hasValidHost") as? Bool

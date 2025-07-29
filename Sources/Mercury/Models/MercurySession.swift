@@ -1,15 +1,15 @@
 //
-//  HTTPSession.swift
-//  SwiftHTTPClient
+//  MercurySession.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 12/07/2025.
 //
 
 import Foundation
 
-internal protocol HTTPSession {
+internal protocol MercurySession {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 
-extension URLSession: HTTPSession {}
+extension URLSession: MercurySession {}
 

@@ -1,18 +1,18 @@
 //
-//  MockHTTPClientTests.swift
-//  SwiftHTTPClientTests
+//  MockMercuryTests.swift
+//  MercuryTests
 //
 //  Created by Josh Gallant on 14/07/2025.
 //
 
 import XCTest
-@testable import SwiftHTTPClient
+@testable import Mercury
 
-final class MockHTTPClientTests: XCTestCase {
+final class MockMercuryTests: XCTestCase {
 
     func test_givenMock_whenInit_thenRecordedCallsIsEmpty() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         
         // When
         let recordedCalls = await mock.recordedCalls
@@ -23,10 +23,10 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenStubbedResult_whenGetIsCalled_thenReturnsStub_andRecordsCall() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         let data = Data([0, 1, 2])
         let response = HTTPURLResponse(url: URL(string: "https://a.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        let expected = HTTPSuccess(data: data, response: response)
+        let expected = MercurySuccess(data: data, response: response)
         await mock.setGetResult(.success(expected))
         
         // When
@@ -46,7 +46,7 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenStubbedResult_whenPostDataIsCalled_thenReturnsStub_andRecordsCall() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         let data = Data("body".utf8)
         await mock.setPostResult(.failure(.invalidResponse))
         
@@ -71,10 +71,10 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenStubbedResult_whenPostEncodableIsCalled_thenReturnsStub_andRecordsCall() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         struct Foo: Encodable {}
         let response = HTTPURLResponse(url: URL(string: "https://mock.com")!, statusCode: 201, httpVersion: nil, headerFields: nil)!
-        await mock.setPostResult(.success(HTTPSuccess(data: Data([3,2,1]), response: response)))
+        await mock.setPostResult(.success(MercurySuccess(data: Data([3,2,1]), response: response)))
         
         // When
         let result = await mock.post("/baz", headers: nil, queryItems: nil, body: Foo(), fragment: "zzz", cachePolicy: .returnCacheDataElseLoad, encoder: JSONEncoder())
@@ -93,7 +93,7 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenStubbedResult_whenPutIsCalled_thenReturnsStub_andRecordsCall() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         let serverData = Data([9,8])
         await mock.setPutResult(.failure(.server(statusCode: 404, data: serverData)))
         
@@ -119,7 +119,7 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenStubbedResult_whenPatchIsCalled_thenReturnsStub_andRecordsCall() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         let error = NSError(domain: "E", code: 1)
         await mock.setPatchResult(.failure(.encoding(error)))
         let body = Data("123".utf8)
@@ -146,7 +146,7 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenStubbedResult_whenDeleteIsCalled_thenReturnsStub_andRecordsCall() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         let urlError = URLError(.timedOut)
         await mock.setDeleteResult(.failure(.transport(urlError)))
         let body = Data("del".utf8)
@@ -172,7 +172,7 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenMultipleCalls_whenAllMethodsCalled_thenAllAreRecordedInOrder() async {
         // Given
-        let mock = MockHTTPClient()
+        let mock = MockMercury()
         struct Foo: Encodable {}
         _ = await mock.get("/a")
         _ = await mock.post("/b", data: nil)
@@ -197,9 +197,9 @@ final class MockHTTPClientTests: XCTestCase {
     
     func test_givenCallEnum_whenEquatableConformance_thenAllCasesAreEquatable() {
         // Given
-        let get1 = MockHTTPClient.Call.get(path: "x", headers: nil, queryItems: nil, fragment: nil)
-        let get2 = MockHTTPClient.Call.get(path: "x", headers: nil, queryItems: nil, fragment: nil)
-        let get3 = MockHTTPClient.Call.get(path: "y", headers: nil, queryItems: nil, fragment: nil)
+        let get1 = MockMercury.Call.get(path: "x", headers: nil, queryItems: nil, fragment: nil)
+        let get2 = MockMercury.Call.get(path: "x", headers: nil, queryItems: nil, fragment: nil)
+        let get3 = MockMercury.Call.get(path: "y", headers: nil, queryItems: nil, fragment: nil)
         
         // When & Then
         XCTAssertEqual(get1, get2)

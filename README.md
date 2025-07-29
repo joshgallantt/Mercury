@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>SwiftHTTPClient</h1>
+<h1>Mercury</h1>
 
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%2016%2B%20%7C%20iPadOS%2016%2B%20%7C%20macOS%2013%2B%20%7C%20watchOS%209%2B%20%7C%20tvOS%2016%2B%20%7C%20visionOS%201%2B-blue.svg?style=flat)](#requirements)
 <br>

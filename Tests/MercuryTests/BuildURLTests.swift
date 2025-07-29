@@ -1,13 +1,13 @@
 //
 //  BuildURLTests.swift
-//  SwiftHTTPClient
+//  Mercury
 //
 //  Created by Josh Gallant on 14/07/2025.
 //
 
 import XCTest
 
-@testable import SwiftHTTPClient
+@testable import Mercury
 
 final class BuildURLTests: XCTestCase {
     

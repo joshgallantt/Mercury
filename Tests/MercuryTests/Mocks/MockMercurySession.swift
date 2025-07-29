@@ -1,14 +1,14 @@
 //
-//  MockHTTPSession.swift
-//  SwiftHTTPClient
+//  MockMercurySession.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 12/07/2025.
 //
 
 import XCTest
-@testable import SwiftHTTPClient
+@testable import Mercury
 
-final class MockHTTPSession: HTTPSession {
+final class MockMercurySession: MercurySession {
     enum Scenario {
         case success(Data, URLResponse)
         case error(Error)

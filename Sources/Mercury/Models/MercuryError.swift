@@ -1,13 +1,13 @@
 //
-//  HTTPFailure.swift
-//  SwiftHTTPClient
+//  MercuryError.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 12/07/2025.
 //
 
 import Foundation
 
-public enum HTTPFailure: Error, CustomStringConvertible, Sendable {
+public enum MercuryError: Error, CustomStringConvertible, Sendable {
     case invalidURL
     case server(statusCode: Int, data: Data?)
     case invalidResponse

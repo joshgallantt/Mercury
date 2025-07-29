@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwiftHTTPClient",
+    name: "Mercury",
     platforms: [
         .iOS(.v16),
         .macOS(.v13),
@@ -14,17 +14,17 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "SwiftHTTPClient",
-            targets: ["SwiftHTTPClient"]
+            name: "Mercury",
+            targets: ["Mercury"]
         ),
     ],
     targets: [
         .target(
-            name: "SwiftHTTPClient"
+            name: "Mercury"
         ),
         .testTarget(
-            name: "SwiftHTTPClientTests",
-            dependencies: ["SwiftHTTPClient"]
+            name: "MercuryTests",
+            dependencies: ["Mercury"]
         ),
     ]
 )

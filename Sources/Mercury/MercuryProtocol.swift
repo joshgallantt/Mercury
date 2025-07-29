@@ -1,6 +1,6 @@
 //
-//  HTTPClient.swift
-//  SwiftHTTPClient
+//  MercuryProtocol.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 14/07/2025.
 //
@@ -9,10 +9,10 @@ import Foundation
 
 /// An abstraction for performing HTTP requests asynchronously.
 ///
-/// `HTTPClient` enables decoupling of networking logic from consumers (such as repositories),
+/// `MercuryProtocol` enables decoupling of networking logic from consumers (such as repositories),
 /// allowing for easy mocking in unit tests and interchangeable implementations. All methods are asynchronous
 /// and safe for use with Swift Concurrency. Implementations must conform to `Sendable` for concurrency safety.
-public protocol HTTPClient: Sendable {
+public protocol MercuryProtocol: Sendable {
     
     /// Performs an HTTP GET request to the specified path.
     ///
@@ -29,7 +29,7 @@ public protocol HTTPClient: Sendable {
         queryItems: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<HTTPSuccess, HTTPFailure>
+    ) async -> Result<MercurySuccess, MercuryError>
     
     /// Performs an HTTP POST request to the specified path, with optional raw body data.
     ///
@@ -48,7 +48,7 @@ public protocol HTTPClient: Sendable {
         data: Data?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<HTTPSuccess, HTTPFailure>
+    ) async -> Result<MercurySuccess, MercuryError>
     
     /// Performs an HTTP POST request by encoding an `Encodable` body as JSON.
     ///
@@ -69,7 +69,7 @@ public protocol HTTPClient: Sendable {
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
         encoder: JSONEncoder
-    ) async -> Result<HTTPSuccess, HTTPFailure>
+    ) async -> Result<MercurySuccess, MercuryError>
     
     /// Performs an HTTP PUT request to the specified path, with optional raw body data.
     ///
@@ -88,7 +88,7 @@ public protocol HTTPClient: Sendable {
         body: Data?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<HTTPSuccess, HTTPFailure>
+    ) async -> Result<MercurySuccess, MercuryError>
     
     /// Performs an HTTP PATCH request to the specified path, with optional raw body data.
     ///
@@ -107,7 +107,7 @@ public protocol HTTPClient: Sendable {
         body: Data?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<HTTPSuccess, HTTPFailure>
+    ) async -> Result<MercurySuccess, MercuryError>
     
     /// Performs an HTTP DELETE request to the specified path, with optional raw body data.
     ///
@@ -126,5 +126,5 @@ public protocol HTTPClient: Sendable {
         body: Data?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<HTTPSuccess, HTTPFailure>
+    ) async -> Result<MercurySuccess, MercuryError>
 }

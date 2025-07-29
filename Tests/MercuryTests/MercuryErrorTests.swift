@@ -1,18 +1,18 @@
 //
-//  HTTPFailureTests.swift
-//  SwiftHTTPClient
+//  MercuryErrorTests.swift
+//  Mercury
 //
 //  Created by Josh Gallant on 14/07/2025.
 //
 import XCTest
 
-@testable import SwiftHTTPClient
+@testable import Mercury
 
-final class HTTPFailureTests: XCTestCase {
+final class MercuryErrorTests: XCTestCase {
     
     func test_givenInvalidURL_whenDescription_thenIsCorrect() {
         // Given
-        let failure = HTTPFailure.invalidURL
+        let failure = MercuryError.invalidURL
         
         // When
         let description = failure.description
@@ -25,7 +25,7 @@ final class HTTPFailureTests: XCTestCase {
         // Given
         let message = "Error details from server"
         let data = message.data(using: .utf8)
-        let failure = HTTPFailure.server(statusCode: 404, data: data)
+        let failure = MercuryError.server(statusCode: 404, data: data)
         
         // When
         let description = failure.description
@@ -40,7 +40,7 @@ final class HTTPFailureTests: XCTestCase {
     func test_givenServerErrorWithEmptyData_whenDescription_thenNoBodyIncluded() {
         // Given
         let data = Data()
-        let failure = HTTPFailure.server(statusCode: 500, data: data)
+        let failure = MercuryError.server(statusCode: 500, data: data)
         
         // When
         let description = failure.description
@@ -51,7 +51,7 @@ final class HTTPFailureTests: XCTestCase {
     
     func test_givenServerErrorWithNilData_whenDescription_thenNoBodyIncluded() {
         // Given
-        let failure = HTTPFailure.server(statusCode: 403, data: nil)
+        let failure = MercuryError.server(statusCode: 403, data: nil)
         
         // When
         let description = failure.description
@@ -62,7 +62,7 @@ final class HTTPFailureTests: XCTestCase {
     
     func test_givenInvalidResponse_whenDescription_thenIsCorrect() {
         // Given
-        let failure = HTTPFailure.invalidResponse
+        let failure = MercuryError.invalidResponse
         
         // When
         let description = failure.description
@@ -74,7 +74,7 @@ final class HTTPFailureTests: XCTestCase {
     func test_givenTransportError_whenDescription_thenIncludesErrorDescription() {
         // Given
         let error = NSError(domain: "Transport", code: 1, userInfo: [NSLocalizedDescriptionKey: "Connection lost"])
-        let failure = HTTPFailure.transport(error)
+        let failure = MercuryError.transport(error)
         
         // When
         let description = failure.description
@@ -90,7 +90,7 @@ final class HTTPFailureTests: XCTestCase {
             var errorDescription: String? { "Failed to encode" }
         }
         let error = Dummy()
-        let failure = HTTPFailure.encoding(error)
+        let failure = MercuryError.encoding(error)
         
         // When
         let description = failure.description
@@ -102,7 +102,7 @@ final class HTTPFailureTests: XCTestCase {
     
     func test_givenAllCases_whenConformsToError() {
         // Given
-        let failures: [HTTPFailure] = [
+        let failures: [MercuryError] = [
             .invalidURL,
             .server(statusCode: 500, data: nil),
             .invalidResponse,
