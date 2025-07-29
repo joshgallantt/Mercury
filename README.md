@@ -136,6 +136,9 @@ let result = await client.post(
 )
 ```
 
+> [!NOTE]
+> Unless otherwise specified the encoder will default to JSON.
+
 ### Headers and Customization
 
 #### Default Headers
@@ -192,7 +195,7 @@ let client = Mercury(
 )
 ```
 
-> [!INFO]
+> [!NOTE]
 > By default Mercury will cache with respect to headers provided in server responses.
 
 #### Per-Request Cache Policy
