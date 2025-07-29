@@ -17,7 +17,8 @@
 </div>
 
 
-A modern, type-safe HTTP client for Swift built with Swift Concurrency. Mercury provides a clean, protocol-based API that's perfect for dependency injection and testing.
+Mercury is a lightweight, testable HTTP client that makes Swift networking ergonomic, predictable, and concurrency-safe by default. With built-in support for clean URL construction, customizable headers, and structured error handling, it lets you focus on your app logic - not request plumbing.
+
 
 ## Features
 
