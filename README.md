@@ -122,7 +122,7 @@ let result = await client.post("/users", body: newUser)
 
 #### 3. Custom Encoding
 
-Use custom encoders for specialized formatting:
+Use custom encoders for specialized formatting, will use JSONEncoder by default unless otherwise provided.
 
 ```swift
 let encoder = JSONEncoder()
@@ -135,9 +135,6 @@ let result = await client.post(
     encoder: encoder
 )
 ```
-
-> [!NOTE]
-> Unless otherwise specified the encoder will default to JSON.
 
 ### Headers and Customization
 
@@ -182,7 +179,7 @@ Per-request headers are merged with default headers, with per-request headers ta
 
 ### Cache Policies
 
-Control caching behavior at the client and request level:
+Mercury will try to cache by default by respecting headers provided by the server, however, if you wish to override this you can at both the client and request level:
 
 #### Default Cache Policy
 
@@ -194,9 +191,6 @@ let client = Mercury(
     defaultCachePolicy: .reloadIgnoringLocalCacheData
 )
 ```
-
-> [!NOTE]
-> By default Mercury will cache with respect to headers provided in server responses.
 
 #### Per-Request Cache Policy
 
