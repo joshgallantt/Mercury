@@ -11,11 +11,10 @@
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
-[![Coverage](https://img.shields.io/badge/Coverage-98.5%25-brightgreen.svg?style=flat)](#)
+[![Coverage](https://img.shields.io/badge/Coverage-98.2%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
-
 
 Mercury is a lightweight, testable HTTP client that makes Swift networking ergonomic, predictable, and concurrency-safe by default. With built-in support for clean URL construction, customizable headers, and structured error handling, it lets you focus on your app logic - not request plumbing.
 
@@ -30,6 +29,7 @@ Mercury is a lightweight, testable HTTP client that makes Swift networking ergon
 - ✅ **Query Parameters**: Built-in query string and URL fragment support
 - ✅ **Mock Support**: Comprehensive mocking for unit tests
 - ✅ **Error Handling**: Detailed error types for robust error handling
+- ✅ **Deterministic Signatures**: Every request returns a stable, content-aware `requestSignature`
 
 ## Installation
 
@@ -56,8 +56,13 @@ switch result {
 case .success(let success):
     let data = success.data
     let statusCode = success.response.statusCode
-case .failure(let error):
-    print("Request failed: \(error)")
+    let signature = success.requestSignature
+    print("✅ Success [\(statusCode)] with signature: \(signature)")
+    
+case .failure(let failure):
+    let error = failure.error
+    let signature = failure.requestSignature
+    print("❌ Failure [\(error)] for request: \(signature)")
 }
 ```
 
@@ -250,32 +255,96 @@ Mercury(host: "http://localhost:3000")             // Custom protocol and port
 Mercury(host: "https://api.example.com/api/v1")    // With base path
 ```
 
-## Error Handling
+## Results - Success & Failure
 
-Mercury provides detailed error information through the `MercuryError` enum:
+Every network request returns a `Result<MercurySuccess, MercuryFailure>`, providing access to both the outcome **and** the unique fingerprint of the request.
+
+### 🔹 MercurySuccess
+
+On success, you get:
 
 ```swift
-let result = await client.get("/users")
+struct MercurySuccess {
+    let data: Data
+    let response: HTTPURLResponse
+    let requestSignature: String
+}
+```
+
+* `data`: The raw response body
+* `response`: The HTTP response metadata
+* `requestSignature`: A **deterministic hash** representing the full request (method, URL, headers, body). This can be used for logging, cache lookups, or deduplication.
+
+### 🔸 MercuryFailure
+
+On failure, you get:
+
+```swift
+struct MercuryFailure: Error {
+    let error: MercuryError
+    let requestSignature: String
+}
+```
+
+* `error`: One of the structured `MercuryError` cases (see below)
+* `requestSignature`: Same as in `MercurySuccess` — even on failure, it's available (unless the URL was invalid)
+
+### 🧬 What is `requestSignature`?
+
+`requestSignature` is a unique, content-aware hash used internally by Mercury and exposed for advanced use cases like:
+
+* Invalidation of specific cached requests
+* Detecting duplicate or replayed requests
+* Logging or debugging at the network boundary
+
+It is **guaranteed to be deterministic** — meaning the same request with the same structure will always produce the same signature, regardless of header ordering or instantiation timing.
+
+### 💥 MercuryError Cases
+
+```swift
+enum MercuryError: Error {
+    case invalidURL
+    case server(statusCode: Int, data: Data?)
+    case invalidResponse
+    case transport(Error)
+    case encoding(Error)
+}
+```
+
+| Case               | Description                                                          |
+| ------------------ | -------------------------------------------------------------------- |
+| `invalidURL`       | Failed to build a valid URL (e.g., empty host or path)               |
+| `server(_, data?)` | Received a non-2xx status code, optional response body is available  |
+| `invalidResponse`  | Received a response that wasn’t an `HTTPURLResponse`                 |
+| `transport(Error)` | Lower-level networking issue (e.g., no internet, timeout, SSL error) |
+| `encoding(Error)`  | Failed to encode an `Encodable` body as JSON                         |
+
+### 🔍 Example
+
+```swift
+let result = await client.post("/users", body: newUser)
 
 switch result {
-case .success(let response):
-    // Handle success
-    break
-case .failure(let error):
-    switch error {
+case .success(let success):
+    print("✅ Created user")
+    print("Signature: \(success.requestSignature)")
+case .failure(let failure):
+    print("❌ Request failed with signature: \(failure.requestSignature)")
+    
+    switch failure.error {
     case .invalidURL:
-        print("The URL could not be constructed")
-    case .server(let statusCode, let data):
-        print("Server error: \(statusCode)")
-        if let data = data, let message = String(data: data, encoding: .utf8) {
-            print("Error details: \(message)")
+        print("The URL was malformed")
+    case .server(let code, let data):
+        print("Server responded with status: \(code)")
+        if let data = data {
+            print(String(decoding: data, as: UTF8.self))
         }
     case .invalidResponse:
-        print("Response was not a valid HTTP response")
-    case .transport(let error):
-        print("Network error: \(error.localizedDescription)")
-    case .encoding(let error):
-        print("Failed to encode request body: \(error.localizedDescription)")
+        print("No HTTPURLResponse received")
+    case .transport(let err):
+        print("Network error: \(err.localizedDescription)")
+    case .encoding(let err):
+        print("Encoding error: \(err.localizedDescription)")
     }
 }
 ```
@@ -291,6 +360,7 @@ import XCTest
 final class UserRepositoryTests: XCTestCase {
     
     func test_givenValidUser_whenCreateUser_thenReturnsSuccess() async throws {
+    
         // Given
         let mock = MockMercury()
         let expectedResponse = HTTPURLResponse(
@@ -300,9 +370,15 @@ final class UserRepositoryTests: XCTestCase {
             headerFields: nil
         )!
         
-        await mock.setPostResult(.success(
-            MercurySuccess(data: Data(), response: expectedResponse)
-        ))
+        await mock.setPostResult(
+            .success(
+                MercurySuccess(
+                    data: Data(),
+                    response: expectedResponse,
+                    requestSignature: "test-signature"
+                )
+            )
+        )
         
         let repository = UserRepository(client: mock)
         

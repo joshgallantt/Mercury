@@ -10,4 +10,5 @@ import Foundation
 public struct MercurySuccess: Sendable {
     public let data: Data
     public let response: HTTPURLResponse
+    public let requestSignature: String
 }
