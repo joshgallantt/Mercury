@@ -16,10 +16,10 @@
 
 </div>
 
+
 Mercury is a lightweight, testable HTTP client that makes Swift networking ergonomic, predictable, and concurrency-safe by default. With built-in support for clean URL construction, customizable headers, and structured error handling, it lets you focus on your app logic - not request plumbing.
 
-
-## Features
+## <br><br> Features
 
 - ✅ **Swift Concurrency**: Built from the ground up with async/await
 - ✅ **Protocol-Based**: Easy dependency injection and testing with `MercuryProtocol`
@@ -31,11 +31,9 @@ Mercury is a lightweight, testable HTTP client that makes Swift networking ergon
 - ✅ **Error Handling**: Detailed error types for robust error handling
 - ✅ **Deterministic Signatures**: Every request returns a stable, content-aware `requestSignature`
 
-## Installation
+## <br><br> Installation
 
-### Swift Package Manager
-
-Add Mercury to your project using Xcode or by adding it to your `Package.swift`:
+Add Mercury to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
@@ -43,7 +41,9 @@ dependencies: [
 ]
 ```
 
-## Quick Start
+## <br><br> Quick Start
+
+Basic usage:
 
 ```swift
 import Mercury
@@ -66,153 +66,25 @@ case .failure(let failure):
 }
 ```
 
-## API Overview
+Mercury intelligently parses various host formats:
 
-### HTTP Methods
+```swift
+Mercury(host: "https://api.example.com")           // Standard URL
+Mercury(host: "api.example.com")                   // Defaults to HTTPS
+Mercury(host: "http://localhost:3000")             // Custom protocol and port
+Mercury(host: "https://api.example.com/api/v1")    // With base path
+Mercury(host: "https://api.example.com:8443/v2")   // Custom port + base path
+```
 
 Mercury supports all standard HTTP methods:
 
 ```swift
-// GET request
 await client.get("/users")
-
-// POST with raw data
-await client.post("/users", data: userData)
-
-// POST with Encodable object
 await client.post("/users", body: newUser)
-
-// PUT request
 await client.put("/users/123", body: updatedUser)
-
-// PATCH request
 await client.patch("/users/123", body: partialUpdate)
-
-// DELETE request
 await client.delete("/users/123")
 ```
-
-### Payload Options
-
-Mercury provides flexible payload handling for different use cases:
-
-#### 1. Raw Data Payloads
-
-Perfect for when you have pre-encoded data or need full control over the request body:
-
-```swift
-let jsonData = """
-{
-    "name": "John Doe",
-    "email": "john@example.com"
-}
-""".data(using: .utf8)!
-
-let result = await client.post("/users", data: jsonData)
-```
-
-#### 2. Encodable Objects
-
-Automatically encode Swift types to JSON:
-
-```swift
-struct User: Encodable {
-    let name: String
-    let email: String
-}
-
-let newUser = User(name: "John Doe", email: "john@example.com")
-let result = await client.post("/users", body: newUser)
-```
-
-#### 3. Custom Encoding
-
-Use custom encoders for specialized formatting, will use JSONEncoder by default unless otherwise provided.
-
-```swift
-let encoder = JSONEncoder()
-encoder.dateEncodingStrategy = .iso8601
-encoder.keyEncodingStrategy = .convertToSnakeCase
-
-let result = await client.post(
-    "/users",
-    body: newUser,
-    encoder: encoder
-)
-```
-
-### Headers and Customization
-
-#### Default Headers
-
-Set headers that apply to all requests:
-
-```swift
-let client = Mercury(
-    host: "https://api.example.com",
-    defaultHeaders: [
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "Bearer \(token)"
-    ]
-)
-```
-
-#### Per-Request Headers
-
-Override or add headers for specific requests:
-
-```swift
-await client.get(
-    "/users",
-    headers: [
-        "X-Request-ID": UUID().uuidString,
-        "Accept": "application/vnd.api+json"  // Overrides default
-    ]
-)
-```
-
-#### Header Merging
-
-Per-request headers are merged with default headers, with per-request headers taking precedence:
-
-```swift
-// Default headers: ["Accept": "application/json", "Authorization": "Bearer token"]
-// Request headers: ["Accept": "text/plain", "X-Custom": "value"]
-// Final headers: ["Accept": "text/plain", "Authorization": "Bearer token", "X-Custom": "value"]
-```
-
-### Cache Policies
-
-Mercury will try to cache by default by respecting headers provided by the server, however, if you wish to override this you can at both the client and request level:
-
-#### Default Cache Policy
-
-Set a default policy for all requests:
-
-```swift
-let client = Mercury(
-    host: "https://api.example.com",
-    defaultCachePolicy: .reloadIgnoringLocalCacheData
-)
-```
-
-#### Per-Request Cache Policy
-
-Override caching for specific requests:
-
-```swift
-// Use cache if available, otherwise load from network
-await client.get("/users", cachePolicy: .returnCacheDataElseLoad)
-
-// Always reload from network
-await client.get("/users", cachePolicy: .reloadIgnoringLocalCacheData)
-
-// Only use cached data
-await client.get("/users", cachePolicy: .returnCacheDataDontLoad)
-```
-
-### Query Parameters and URL Fragments
 
 Build complex URLs with query parameters and fragments:
 
@@ -229,39 +101,106 @@ await client.get(
 // Results in: /users?page=2&limit=20&sort=name#results
 ```
 
-### Advanced Configuration
+## <br><br> Payloads
 
-#### Custom Ports and Base Paths
-
-```swift
-// With custom port
-let client = Mercury(host: "https://api.example.com:8443")
-
-// With base path
-let client = Mercury(host: "https://api.example.com/v2")
-
-// Both
-let client = Mercury(host: "https://api.example.com:8443/api/v2")
-```
-
-#### Host Parsing
-
-Mercury intelligently parses various host formats, protecting you from small mistakes:
+### Raw Data Payloads
+Perfect for when you have pre-encoded data or need full control:
 
 ```swift
-Mercury(host: "https://api.example.com")           // Standard URL
-Mercury(host: "api.example.com")                   // Defaults to HTTPS
-Mercury(host: "http://localhost:3000")             // Custom protocol and port
-Mercury(host: "https://api.example.com/api/v1")    // With base path
+let jsonData = """
+{
+    "name": "John Doe",
+    "email": "john@example.com"
+}
+""".data(using: .utf8)!
+
+let result = await client.post("/users", data: jsonData)
 ```
 
-## Results - Success & Failure
+### Encodable Objects
+Automatically encode Swift types to JSON:
 
-Every network request returns a `Result<MercurySuccess, MercuryFailure>`, providing access to both the outcome **and** the unique fingerprint of the request.
+```swift
+struct User: Encodable {
+    let name: String
+    let email: String
+}
 
-### 🔹 MercurySuccess
+let newUser = User(name: "John Doe", email: "john@example.com")
+let result = await client.post("/users", body: newUser)
+```
 
-On success, you get:
+### Custom Encoding
+Use custom encoders for specialized formatting:
+
+```swift
+let encoder = JSONEncoder()
+encoder.dateEncodingStrategy = .iso8601
+encoder.keyEncodingStrategy = .convertToSnakeCase
+
+let result = await client.post("/users", body: newUser, encoder: encoder)
+```
+
+## <br><br> Headers
+
+### Default Headers
+Set headers that apply to all requests:
+
+```swift
+let client = Mercury(
+    host: "https://api.example.com",
+    defaultHeaders: [
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer \(token)"
+    ]
+)
+```
+
+### Per-Request Headers
+Override or add headers for specific requests:
+
+```swift
+await client.get(
+    "/users",
+    headers: [
+        "X-Request-ID": UUID().uuidString,
+        "Accept": "application/vnd.api+json"  // Overrides default
+    ]
+)
+```
+
+## <br><br> Cache Policies
+
+### Default Cache Policy
+Set a default policy for all requests:
+
+```swift
+let client = Mercury(
+    host: "https://api.example.com",
+    defaultCachePolicy: .reloadIgnoringLocalCacheData
+)
+```
+
+### Per-Request Cache Policy Overrides
+Override caching for specific requests:
+
+```swift
+// Use cache if available, otherwise load from network
+await client.get("/users", cachePolicy: .returnCacheDataElseLoad)
+
+// Always reload from network
+await client.get("/users", cachePolicy: .reloadIgnoringLocalCacheData)
+
+// Only use cached data
+await client.get("/users", cachePolicy: .returnCacheDataDontLoad)
+```
+
+## <br><br> Responses
+
+Every network request returns a `Result<MercurySuccess, MercuryFailure>`.
+
+### MercurySuccess
 
 ```swift
 struct MercurySuccess {
@@ -271,13 +210,11 @@ struct MercurySuccess {
 }
 ```
 
-* `data`: The raw response body
-* `response`: The HTTP response metadata
-* `requestSignature`: A **deterministic hash** representing the full request (method, URL, headers, body). This can be used for logging, cache lookups, or deduplication.
+- `data`: The raw response body
+- `response`: The HTTP response metadata
+- `requestSignature`: A **deterministic hash** representing the full request
 
-### 🔸 MercuryFailure
-
-On failure, you get:
+### MercuryFailure
 
 ```swift
 struct MercuryFailure: Error {
@@ -286,20 +223,20 @@ struct MercuryFailure: Error {
 }
 ```
 
-* `error`: One of the structured `MercuryError` cases (see below)
-* `requestSignature`: Same as in `MercurySuccess` — even on failure, it's available (unless the URL was invalid)
+- `error`: One of the structured `MercuryError` cases
+- `requestSignature`: Same unique hash - available even on failure
 
-### 🧬 What is `requestSignature`?
+### What is `requestSignature`?
 
-`requestSignature` is a unique, content-aware hash used internally by Mercury and exposed for advanced use cases like:
+`requestSignature` is a **unique, content-aware hash** that Mercury generates for every request. It's based on the complete request structure (method, URL, headers, body) and is **guaranteed to be deterministic** - the same request will always produce the same signature.
 
-* Invalidation of specific cached requests
-* Detecting duplicate or replayed requests
-* Logging or debugging at the network boundary
+**Use cases:**
+- **Cache invalidation**: Target specific cached requests
+- **Request deduplication**: Detect duplicate or replayed requests  
+- **Logging & debugging**: Track requests across your app
+- **Analytics**: Group related network calls
 
-It is **guaranteed to be deterministic** — meaning the same request with the same structure will always produce the same signature, regardless of header ordering or instantiation timing.
-
-### 💥 MercuryError Cases
+## <br><br> Error Handling
 
 ```swift
 enum MercuryError: Error {
@@ -311,15 +248,15 @@ enum MercuryError: Error {
 }
 ```
 
-| Case               | Description                                                          |
-| ------------------ | -------------------------------------------------------------------- |
-| `invalidURL`       | Failed to build a valid URL (e.g., empty host or path)               |
-| `server(_, data?)` | Received a non-2xx status code, optional response body is available  |
-| `invalidResponse`  | Received a response that wasn’t an `HTTPURLResponse`                 |
-| `transport(Error)` | Lower-level networking issue (e.g., no internet, timeout, SSL error) |
-| `encoding(Error)`  | Failed to encode an `Encodable` body as JSON                         |
+| Case | Description |
+|------|-------------|
+| `invalidURL` | Failed to build a valid URL |
+| `server(_, data?)` | Non-2xx status code, optional response body available |
+| `invalidResponse` | Response wasn't an `HTTPURLResponse` |
+| `transport(Error)` | Network issue (no internet, timeout, SSL error) |
+| `encoding(Error)` | Failed to encode `Encodable` body as JSON |
 
-### 🔍 Example
+### Complete Error Handling Example
 
 ```swift
 let result = await client.post("/users", body: newUser)
@@ -349,7 +286,7 @@ case .failure(let failure):
 }
 ```
 
-## Testing
+## <br><br> Testing with MockMercury
 
 Mercury includes `MockMercury` for comprehensive testing support:
 
@@ -360,7 +297,6 @@ import XCTest
 final class UserRepositoryTests: XCTestCase {
     
     func test_givenValidUser_whenCreateUser_thenReturnsSuccess() async throws {
-    
         // Given
         let mock = MockMercury()
         let expectedResponse = HTTPURLResponse(
@@ -407,7 +343,7 @@ final class UserRepositoryTests: XCTestCase {
 - ✅ **Method-Specific**: Different stubs for GET, POST, PUT, PATCH, DELETE
 - ✅ **Parameter Capture**: Verify paths, headers, query items, and fragments
 
-## License
+## <br><br> License
 
 Mercury is available under the MIT License. See the [LICENSE](./LICENSE) file for more details.
 
