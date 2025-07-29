@@ -48,19 +48,15 @@ dependencies: [
 ```swift
 import Mercury
 
-// Initialize the client
 let client = Mercury(host: "https://api.example.com")
 
-// Make a simple GET request
 let result = await client.get("/users")
 
 switch result {
 case .success(let success):
-    // Handle successful response
     let data = success.data
     let statusCode = success.response.statusCode
 case .failure(let error):
-    // Handle error
     print("Request failed: \(error)")
 }
 ```
@@ -195,6 +191,9 @@ let client = Mercury(
     defaultCachePolicy: .reloadIgnoringLocalCacheData
 )
 ```
+
+> [!INFO]
+> By default Mercury will cache with respect to headers provided in server responses.
 
 #### Per-Request Cache Policy
 
