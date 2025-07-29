@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="Images/mercury.png" alt="Pandora" width="300" />
+<img src="Images/mercury.png" alt="Mercury" width="300" />
 
 > “Let Mercury go swiftly, bearing words not his, but heaven’s.”
 >
