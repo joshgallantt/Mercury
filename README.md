@@ -55,10 +55,10 @@ let client = Mercury(host: "https://api.example.com")
 let result = await client.get("/users")
 
 switch result {
-case .success(let response):
+case .success(let success):
     // Handle successful response
-    let data = response.data
-    let statusCode = response.response.statusCode
+    let data = success.data
+    let statusCode = success.response.statusCode
 case .failure(let error):
     // Handle error
     print("Request failed: \(error)")
@@ -138,17 +138,6 @@ let result = await client.post(
     body: newUser,
     encoder: encoder
 )
-```
-
-#### 4. Empty Bodies
-
-For requests that don't require a body:
-
-```swift
-// All methods support nil/empty bodies
-await client.get("/users")
-await client.delete("/users/123")  // DELETE with no body
-await client.post("/users/123/activate")  // POST with no body
 ```
 
 ### Headers and Customization
@@ -256,7 +245,7 @@ let client = Mercury(host: "https://api.example.com:8443/api/v2")
 
 #### Host Parsing
 
-Mercury intelligently parses various host formats:
+Mercury intelligently parses various host formats, protecting you from small mistakes:
 
 ```swift
 Mercury(host: "https://api.example.com")           // Standard URL
@@ -345,16 +334,6 @@ final class UserRepositoryTests: XCTestCase {
 - ✅ **Call Recording**: Inspect all calls made to the mock
 - ✅ **Method-Specific**: Different stubs for GET, POST, PUT, PATCH, DELETE
 - ✅ **Parameter Capture**: Verify paths, headers, query items, and fragments
-
-
-## Architecture
-
-Mercury follows Clean Architecture principles and SOLID design patterns:
-
-- **Protocol-Based**: `MercuryProtocol` enables easy dependency injection
-- **Testable**: Built-in mocking support for comprehensive testing
-- **Concurrent**: Safe for use with Swift Concurrency (`Sendable` conformance)
-- **Type-Safe**: Leverages Swift's type system for compile-time safety
 
 ## License
 
