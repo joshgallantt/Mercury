@@ -12,7 +12,7 @@ import Foundation
 /// `MercuryProtocol` enables decoupling of networking logic from consumers (such as repositories),
 /// allowing for easy mocking in unit tests and interchangeable implementations. All methods are asynchronous
 /// and safe for use with Swift Concurrency. Implementations must conform to `Sendable` for concurrency safety.
-public protocol MercuryProtocol: Sendable {
+public protocol MercuryProtocol {
 
     /// Performs an HTTP GET request to the specified path.
     ///

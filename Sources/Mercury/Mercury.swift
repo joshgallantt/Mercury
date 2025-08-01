@@ -7,7 +7,7 @@
 
 import Foundation
 
-public actor Mercury: MercuryProtocol {
+public struct Mercury: MercuryProtocol {
     private let session: MercurySession
     private let scheme: String
     private let host: String
