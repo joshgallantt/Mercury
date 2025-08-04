@@ -2,118 +2,112 @@
 //  MercuryErrorTests.swift
 //  Mercury
 //
-//  Created by Josh Gallant on 14/07/2025.
+//  Created by Josh Gallant on 04/08/2025.
 //
-import XCTest
 
+
+import XCTest
 @testable import Mercury
 
 final class MercuryErrorTests: XCTestCase {
-    
-    func test_givenInvalidURL_whenDescription_thenIsCorrect() {
+    func test_givenInvalidURL_whenDescription_thenMatches() {
         // Given
-        let failure = MercuryError.invalidURL
+        let error = MercuryError.invalidURL
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
         XCTAssertEqual(description, "Invalid URL")
     }
     
-    func test_givenServerErrorWithData_whenDescription_thenIncludesCodeAndBody() {
+    func test_givenServerWithBody_whenDescription_thenContainsStatusCodeAndBody() {
         // Given
-        let message = "Error details from server"
-        let data = message.data(using: .utf8)
-        let failure = MercuryError.server(statusCode: 404, data: data)
+        let bodyString = "Error occurred"
+        let bodyData = bodyString.data(using: .utf8)
+        let error = MercuryError.server(statusCode: 404, data: bodyData)
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
         XCTAssertTrue(description.contains("404"))
-        XCTAssertTrue(description.contains("Server returned error status code: 404"))
-        XCTAssertTrue(description.contains(message))
-        XCTAssertTrue(description.contains("Server response body"))
+        XCTAssertTrue(description.contains(bodyString))
+        XCTAssertTrue(description.hasPrefix("Server returned status code 404"))
     }
     
-    func test_givenServerErrorWithEmptyData_whenDescription_thenNoBodyIncluded() {
+    func test_givenServerWithEmptyBody_whenDescription_thenContainsStatusCodeOnly() {
         // Given
-        let data = Data()
-        let failure = MercuryError.server(statusCode: 500, data: data)
+        let error = MercuryError.server(statusCode: 500, data: nil)
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
-        XCTAssertEqual(description, "Server returned error status code: 500")
+        XCTAssertEqual(description, "Server returned status code 500")
     }
     
-    func test_givenServerErrorWithNilData_whenDescription_thenNoBodyIncluded() {
+    func test_givenServerWithEmptyData_whenDescription_thenContainsStatusCodeOnly() {
         // Given
-        let failure = MercuryError.server(statusCode: 403, data: nil)
+        let error = MercuryError.server(statusCode: 401, data: Data())
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
-        XCTAssertEqual(description, "Server returned error status code: 403")
+        XCTAssertEqual(description, "Server returned status code 401")
     }
     
-    func test_givenInvalidResponse_whenDescription_thenIsCorrect() {
+    func test_givenInvalidResponse_whenDescription_thenMatches() {
         // Given
-        let failure = MercuryError.invalidResponse
+        let error = MercuryError.invalidResponse
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
         XCTAssertEqual(description, "Invalid or unexpected response from server")
     }
     
-    func test_givenTransportError_whenDescription_thenIncludesErrorDescription() {
+    func test_givenTransport_whenDescription_thenIncludesErrorLocalizedDescription() {
         // Given
-        let error = NSError(domain: "Transport", code: 1, userInfo: [NSLocalizedDescriptionKey: "Connection lost"])
-        let failure = MercuryError.transport(error)
+        struct DummyError: LocalizedError { var errorDescription: String? { "Network failure" } }
+        let underlyingError = DummyError()
+        let error = MercuryError.transport(underlyingError)
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
         XCTAssertTrue(description.contains("Transport error"))
-        XCTAssertTrue(description.contains("Connection lost"))
+        XCTAssertTrue(description.contains("Network failure"))
     }
     
-    func test_givenEncodingError_whenDescription_thenIncludesErrorDescription() {
+    func test_givenEncoding_whenDescription_thenIncludesErrorLocalizedDescription() {
         // Given
-        struct Dummy: Error, LocalizedError {
-            var errorDescription: String? { "Failed to encode" }
-        }
-        let error = Dummy()
-        let failure = MercuryError.encoding(error)
+        struct DummyError: LocalizedError { var errorDescription: String? { "Encoding failed" } }
+        let underlyingError = DummyError()
+        let error = MercuryError.encoding(underlyingError)
         
         // When
-        let description = failure.description
+        let description = error.description
         
         // Then
         XCTAssertTrue(description.contains("Encoding error"))
-        XCTAssertTrue(description.contains("Failed to encode"))
+        XCTAssertTrue(description.contains("Encoding failed"))
     }
     
-    func test_givenAllCases_whenConformsToError() {
+    func test_givenDecodingFailed_whenDescription_thenIncludesNamespaceKeyAndError() {
         // Given
-        let failures: [MercuryError] = [
-            .invalidURL,
-            .server(statusCode: 500, data: nil),
-            .invalidResponse,
-            .transport(NSError(domain: "", code: 0)),
-            .encoding(NSError(domain: "", code: 0))
-        ]
+        struct DummyError: LocalizedError { var errorDescription: String? { "Missing value" } }
+        let underlyingError = DummyError()
+        let error = MercuryError.decodingFailed(namespace: "User", key: "id", underlyingError: underlyingError)
+        
+        // When
+        let description = error.description
         
         // Then
-        for failure in failures {
-            let err: Error = failure
-            XCTAssertNotNil(err)
-        }
+        XCTAssertTrue(description.contains("Decoding failed in 'User' for key 'id'"))
+        XCTAssertTrue(description.contains("Missing value"))
     }
 }

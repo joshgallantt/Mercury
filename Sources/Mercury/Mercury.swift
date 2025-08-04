@@ -6,26 +6,21 @@
 //
 
 import Foundation
+import CryptoKit
 
 public struct Mercury: MercuryProtocol {
-    private let session: MercurySession
+    // MARK: - Properties
+    
     private let scheme: String
     private let host: String
     private let port: Int?
     private let basePath: String
     private let defaultHeaders: [String: String]
     private let defaultCachePolicy: URLRequest.CachePolicy
-    private let hasValidHost: Bool
-
-    // MARK: - Initializers
-
-    /// Initializes a new `Mercury` client using a standard `URLSession`.
-    ///
-    /// - Parameters:
-    ///   - host: The base hostname or URL string (e.g. `"api.example.com"` or `"https://api.example.com/v1"`).
-    ///   - port: An optional custom port. If omitted, the port is parsed from the host string if present.
-    ///   - defaultHeaders: HTTP headers applied to every request.
-    ///   - defaultCachePolicy: Default cache policy applied to all requests unless overridden.
+    private let session: URLSession
+    
+    // MARK: - Initialization
+    
     public init(
         host: String,
         port: Int? = nil,
@@ -35,282 +30,413 @@ public struct Mercury: MercuryProtocol {
         ],
         defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) {
-        var parsedScheme = "https"
-        var parsedHost = ""
-        var parsedPort: Int?
-        var parsedBasePath = ""
-        var isValid = true
-
-        do {
-            let (scheme, host, hostPort, basePath) = try BuildHost.execute(host)
-            parsedScheme = scheme
-            parsedHost = host
-            parsedPort = port ?? hostPort
-            parsedBasePath = basePath
-            isValid = !host.isEmpty
-        } catch {
-            isValid = false
-        }
-
-        self.scheme = parsedScheme
-        self.host = parsedHost
-        self.port = parsedPort
-        self.basePath = parsedBasePath
+        let components = URLComponentsParser.parse(host)
+        
+        self.scheme = components.scheme
+        self.host = components.host
+        self.port = port ?? components.port
+        self.basePath = components.basePath
         self.defaultHeaders = defaultHeaders
         self.defaultCachePolicy = defaultCachePolicy
-        self.hasValidHost = isValid
-
-        let configuration = URLSessionConfiguration.default
-        configuration.urlCache = .shared
-        configuration.requestCachePolicy = defaultCachePolicy
-        self.session = URLSession(configuration: configuration)
+        
+        let sessionConfiguration = URLSessionConfiguration.default
+        sessionConfiguration.urlCache = .shared
+        sessionConfiguration.requestCachePolicy = defaultCachePolicy
+        
+        self.session = URLSession(configuration: sessionConfiguration)
     }
-
+    
     internal init(
         host: String,
         port: Int? = nil,
-        session: MercurySession,
+        session: URLSession,
         defaultHeaders: [String: String] = [
             "Accept": "application/json",
             "Content-Type": "application/json"
         ],
         defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) {
-        var parsedScheme = "https"
-        var parsedHost = ""
-        var parsedPort: Int?
-        var parsedBasePath = ""
-        var isValid = true
-
-        do {
-            let (scheme, host, hostPort, basePath) = try BuildHost.execute(host)
-            parsedScheme = scheme
-            parsedHost = host
-            parsedPort = port ?? hostPort
-            parsedBasePath = basePath
-            isValid = !host.isEmpty
-        } catch {
-            isValid = false
-        }
-
-        self.scheme = parsedScheme
-        self.host = parsedHost
-        self.port = parsedPort
-        self.session = session
-        self.basePath = parsedBasePath
+        let components = URLComponentsParser.parse(host)
+        
+        self.scheme = components.scheme
+        self.host = components.host
+        self.port = port ?? components.port
+        self.basePath = components.basePath
         self.defaultHeaders = defaultHeaders
         self.defaultCachePolicy = defaultCachePolicy
-        self.hasValidHost = isValid
+        self.session = session
     }
-
-    // MARK: - HTTP Methods
-
-    /// Performs a `GET` request.
-    public func get(
-        _ path: String,
+    
+    // MARK: - Public API
+    
+    public func get<Response: Decodable>(
+        path: String,
         headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        await request(
-            path: path,
-            method: .GET,
-            headers: headers,
-            queryItems: queryItems,
-            fragment: fragment,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
-        )
-    }
-
-    /// Performs a `POST` request with raw `Data` body.
-    public func post(
-        _ path: String,
-        headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        data: Data? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        await request(
-            path: path,
-            method: .POST,
-            headers: headers,
-            queryItems: queryItems,
-            body: data,
-            fragment: fragment,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
-        )
-    }
-
-    /// Performs a `POST` request by encoding an `Encodable` body into JSON.
-    public func post<T: Encodable>(
-        _ path: String,
-        headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        body: T,
+        query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        encoder: JSONEncoder = JSONEncoder()
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        do {
-            let data = try encoder.encode(body)
-            return await post(
-                path,
-                headers: headers,
-                queryItems: queryItems,
-                data: data,
-                fragment: fragment,
-                cachePolicy: cachePolicy
-            )
-        } catch {
-            return .failure(MercuryFailure(error: .encoding(error), requestSignature: ""))
-        }
-    }
-
-    /// Performs a `PUT` request.
-    public func put(
-        _ path: String,
-        headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        body: Data? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        await request(
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        await performRequest(
+            method: .GET,
             path: path,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy,
+            body: nil as Data?,
+            responseType: responseType
+        )
+    }
+    
+    public func post<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        await performRequest(
+            method: .POST,
+            path: path,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy,
+            body: body,
+            responseType: responseType
+        )
+    }
+    
+    public func put<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        await performRequest(
             method: .PUT,
+            path: path,
             headers: headers,
-            queryItems: queryItems,
-            body: body,
+            query: query,
             fragment: fragment,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
+            cachePolicy: cachePolicy,
+            body: body,
+            responseType: responseType
         )
     }
-
-    /// Performs a `PATCH` request.
-    public func patch(
-        _ path: String,
+    
+    public func patch<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
         headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        body: Data? = nil,
+        query: [String: String]? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        await request(
-            path: path,
+        cachePolicy: URLRequest.CachePolicy? = nil,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        await performRequest(
             method: .PATCH,
+            path: path,
             headers: headers,
-            queryItems: queryItems,
-            body: body,
+            query: query,
             fragment: fragment,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
+            cachePolicy: cachePolicy,
+            body: body,
+            responseType: responseType
         )
     }
-
-    /// Performs a `DELETE` request.
-    public func delete(
-        _ path: String,
+    
+    public func delete<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
         headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        body: Data? = nil,
+        query: [String: String]? = nil,
         fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        await request(
-            path: path,
+        cachePolicy: URLRequest.CachePolicy? = nil,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        await performRequest(
             method: .DELETE,
-            headers: headers,
-            queryItems: queryItems,
-            body: body,
-            fragment: fragment,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
-        )
-    }
-
-    // MARK: - Request Handling
-
-    internal func buildURL(
-        path: String,
-        queryItems: [String: String]?,
-        fragment: String?
-    ) -> URL? {
-        guard hasValidHost else { return nil }
-        return BuildURL.execute(
-            scheme: scheme,
-            host: host,
-            port: port,
-            basePath: basePath,
             path: path,
-            queryItems: queryItems,
-            fragment: fragment
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy,
+            body: body,
+            responseType: responseType
         )
     }
-
-    internal func buildRequest(
-        url: URL,
+    
+    // MARK: - Private Implementation
+    
+    private func performRequest<Body: Encodable, Response: Decodable>(
         method: MercuryMethod,
-        headers: [String: String]?,
-        body: Data?,
-        cachePolicy: URLRequest.CachePolicy
-    ) -> URLRequest {
-        var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 60)
-        request.httpMethod = method.rawValue
-        let mergedHeaders = defaultHeaders.merging(headers ?? [:]) { _, custom in custom }
-        request.allHTTPHeaderFields = mergedHeaders
-        request.httpBody = body
-        return request
-    }
-
-    internal func request(
         path: String,
-        method: MercuryMethod,
-        headers: [String: String]? = nil,
-        queryItems: [String: String]? = nil,
-        body: Data? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy
-    ) async -> Result<MercurySuccess, MercuryFailure> {
-        guard hasValidHost,
-              let url = buildURL(path: path, queryItems: queryItems, fragment: fragment),
-              let urlHost = url.host, !urlHost.isEmpty else {
+        headers: [String: String]?,
+        query: [String: String]?,
+        fragment: String?,
+        cachePolicy: URLRequest.CachePolicy?,
+        body: Body?,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        // Step 1: Validate host
+        guard !host.isEmpty else {
             return .failure(MercuryFailure(error: .invalidURL, requestSignature: ""))
         }
 
+        // Step 2: Build URL
+        guard let url = buildURL(path: path, query: query, fragment: fragment) else {
+            return .failure(MercuryFailure(error: .invalidURL, requestSignature: ""))
+        }
+
+        // Step 3: Encode body only if present
+        var bodyData: Data? = nil
+        if let body {
+            switch encodeBody(body) {
+            case .success(let data):
+                bodyData = data
+            case .failure(let error):
+                return .failure(MercuryFailure(error: error, requestSignature: ""))
+            }
+        }
+
+        // Step 4: Build request
         let request = buildRequest(
             url: url,
             method: method,
             headers: headers,
-            body: body,
+            body: bodyData,
             cachePolicy: cachePolicy
         )
 
-        return await send(request: request)
+        // Step 5: Generate signature
+        let signature = generateSignature(for: request)
+
+        // Step 6: Execute request
+        let networkResult = await executeRequest(request)
+
+        // Step 7: Handle response
+        return result(
+            networkResult: networkResult,
+            responseType: responseType,
+            signature: signature
+        )
     }
-
-    private func send(request: URLRequest) async -> Result<MercurySuccess, MercuryFailure> {
-        let signature = RequestSignature.generate(for: request)
-
+    
+    private func buildURL(path: String, query: [String: String]?, fragment: String?) -> URL? {
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = host
+        components.port = port
+        components.path = buildFullPath(path)
+        components.queryItems = buildQueryItems(from: query)
+        components.fragment = fragment
+        
+        return components.url
+    }
+    
+    private func buildFullPath(_ path: String) -> String {
+        let cleanBasePath = basePath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let cleanPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        
+        let parts = [cleanBasePath, cleanPath].filter { !$0.isEmpty }
+        let fullPath = "/" + parts.joined(separator: "/")
+        
+        return fullPath.replacingOccurrences(of: "/+", with: "/", options: NSString.CompareOptions.regularExpression)
+    }
+    
+    private func buildQueryItems(from query: [String: String]?) -> [URLQueryItem]? {
+        guard let query = query, !query.isEmpty else { return nil }
+        return query.map { URLQueryItem(name: $0.key, value: $0.value) }
+    }
+    
+    private func buildRequest(
+        url: URL,
+        method: MercuryMethod,
+        headers: [String: String]?,
+        body: Data?,
+        cachePolicy: URLRequest.CachePolicy?
+    ) -> URLRequest {
+        var request = URLRequest(
+            url: url,
+            cachePolicy: cachePolicy ?? defaultCachePolicy,
+            timeoutInterval: 60
+        )
+        
+        request.httpMethod = method.rawValue
+        request.allHTTPHeaderFields = mergeHeaders(headers)
+        
+        if let body {
+            request.httpBody = body
+        }
+        
+        return request
+    }
+    
+    private func mergeHeaders(_ customHeaders: [String: String]?) -> [String: String] {
+        guard let customHeaders = customHeaders else {
+            return defaultHeaders
+        }
+        return defaultHeaders.merging(customHeaders) { _, custom in custom }
+    }
+    
+    private func encodeBody<Body: Encodable>(_ body: Body?) -> Result<Data?, MercuryError> {
+        guard let body = body else {
+            return .success(nil)
+        }
+        
+        do {
+            let data = try JSONEncoder().encode(body)
+            return .success(data)
+        } catch {
+            return .failure(.encoding(error))
+        }
+    }
+    
+    private func executeRequest(_ request: URLRequest) async -> Result<(Data, HTTPURLResponse), MercuryError> {
         do {
             let (data, response) = try await session.data(for: request)
+            
             guard let httpResponse = response as? HTTPURLResponse else {
-                return .failure(MercuryFailure(error: .invalidResponse, requestSignature: signature))
+                return .failure(.invalidResponse)
             }
-
-            if (200...299).contains(httpResponse.statusCode) {
-                return .success(MercurySuccess(
-                    data: data,
-                    response: httpResponse,
-                    requestSignature: signature
-                ))
-            } else {
-                return .failure(MercuryFailure(
-                    error: .server(statusCode: httpResponse.statusCode, data: data),
-                    requestSignature: signature
-                ))
-            }
+            
+            return .success((data, httpResponse))
         } catch {
-            return .failure(MercuryFailure(error: .transport(error), requestSignature: signature))
+            return .failure(.transport(error))
         }
+    }
+    
+    private func result<Response: Decodable>(
+        networkResult: Result<(Data, HTTPURLResponse), MercuryError>,
+        responseType: Response.Type,
+        signature: String
+    ) -> Result<MercurySuccess<Response>, MercuryFailure> {
+        switch networkResult {
+        case .failure(let error):
+            return .failure(MercuryFailure(error: error, requestSignature: signature))
+            
+        case .success(let (data, httpResponse)):
+            return processResponse(
+                data: data,
+                httpResponse: httpResponse,
+                responseType: responseType,
+                signature: signature
+            )
+        }
+    }
+    
+    private func processResponse<Response: Decodable>(
+        data: Data,
+        httpResponse: HTTPURLResponse,
+        responseType: Response.Type,
+        signature: String
+    ) -> Result<MercurySuccess<Response>, MercuryFailure> {
+        guard (200...299).contains(httpResponse.statusCode) else {
+            return .failure(MercuryFailure(
+                error: .server(statusCode: httpResponse.statusCode, data: data),
+                requestSignature: signature
+            ))
+        }
+        
+        return decodeResponse(
+            data: data,
+            httpResponse: httpResponse,
+            responseType: responseType,
+            signature: signature
+        )
+    }
+    
+    private func decodeResponse<Response: Decodable>(
+        data: Data,
+        httpResponse: HTTPURLResponse,
+        responseType: Response.Type,
+        signature: String
+    ) -> Result<MercurySuccess<Response>, MercuryFailure> {
+        do {
+            let decoded = try JSONDecoder().decode(responseType, from: data)
+            return .success(MercurySuccess(
+                value: decoded,
+                httpResponse: httpResponse,
+                requestSignature: signature
+            ))
+        } catch {
+            let keyPath = extractKeyPath(from: error, for: responseType)
+            return .failure(MercuryFailure(
+                error: .decodingFailed(
+                    namespace: String(describing: responseType),
+                    key: keyPath,
+                    underlyingError: error
+                ),
+                requestSignature: signature
+            ))
+        }
+    }
+    
+    private func extractKeyPath<Response: Decodable>(
+        from error: Error,
+        for type: Response.Type
+    ) -> String {
+        guard let decodingError = error as? DecodingError else {
+            return "root"
+        }
+        
+        switch decodingError {
+        case .keyNotFound(let key, let context):
+            return buildKeyPath(context.codingPath + [key])
+        case .typeMismatch(_, let context),
+             .valueNotFound(_, let context),
+             .dataCorrupted(let context):
+            return buildKeyPath(context.codingPath)
+        @unknown default:
+            return "root"
+        }
+    }
+    
+    private func buildKeyPath(_ path: [CodingKey]) -> String {
+        path.map { $0.stringValue }.joined(separator: ".")
+    }
+    
+    private func generateSignature(for request: URLRequest) -> String {
+        var components: [String] = []
+        
+        // Add method
+        components.append(request.httpMethod ?? "GET")
+        
+        // Add URL
+        if let url = request.url?.absoluteString {
+            components.append(url)
+        }
+        
+        // Add body hash if present
+        if let body = request.httpBody, !body.isEmpty {
+            components.append("body:\(hashData(body))")
+        }
+        
+        // Add headers if present
+        if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
+            components.append("headers:\(canonicalizeHeaders(headers))")
+        }
+        
+        return components.joined(separator: "|")
+    }
+    
+    private func hashData(_ data: Data) -> String {
+        SHA256.hash(data: data)
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+    
+    private func canonicalizeHeaders(_ headers: [String: String]) -> String {
+        headers
+            .sorted { $0.key.lowercased() < $1.key.lowercased() }
+            .map { "\($0.key.lowercased()):\($0.value)" }
+            .joined(separator: "&")
     }
 }

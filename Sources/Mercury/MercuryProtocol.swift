@@ -7,124 +7,132 @@
 
 import Foundation
 
-/// An abstraction for performing HTTP requests asynchronously.
+
+/// `MercuryProtocol` exposes a clean, minimal interface for networking. Each method:
+/// - Automatically encodes a request body (`Encodable`) if present
+/// - Automatically decodes a response body (`Decodable`) into a concrete type
+/// - Returns a `Result` containing either a successful response (`MercurySuccess<Response>`)
+///   or a structured failure (`MercuryFailure`)
 ///
-/// `MercuryProtocol` enables decoupling of networking logic from consumers (such as repositories),
-/// allowing for easy mocking in unit tests and interchangeable implementations. All methods are asynchronous
-/// and safe for use with Swift Concurrency. Implementations must conform to `Sendable` for concurrency safety.
+/// The response type must be passed explicitly using `responseType`, allowing full control
+/// and avoiding ambiguity around Swift generic inference.
 public protocol MercuryProtocol {
 
-    /// Performs an HTTP GET request to the specified path.
+    /// Sends a `GET` request and decodes the response into the specified type.
+    ///
+    /// Use this for retrieving data without a request body.
     ///
     /// - Parameters:
-    ///   - path: The path component to append to the base URL.
+    ///   - path: The relative path to append to the base URL (e.g., `"/search/multi"`).
     ///   - headers: Optional HTTP headers to include in the request.
-    ///   - queryItems: Optional key-value pairs for the query string.
-    ///   - fragment: Optional URL fragment to append after the query string.
-    ///   - cachePolicy: Optional caching policy. If `nil`, the default policy is applied.
-    /// - Returns: A result containing either a `MercurySuccess` or a `MercuryFailure` (including the request signature).
-    func get(
-        _ path: String,
-        headers: [String: String]?,
-        queryItems: [String: String]?,
-        fragment: String?,
-        cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<MercurySuccess, MercuryFailure>
-
-    /// Performs an HTTP POST request to the specified path, with optional raw body data.
+    ///   - query: Optional query parameters (e.g., `["q": "inception"]`).
+    ///   - fragment: Optional URL fragment (e.g., `#section`).
+    ///   - cachePolicy: Optional caching behavior override. Defaults to the client’s default if `nil`.
+    ///   - responseType: The expected `Decodable` response type.
     ///
-    /// - Parameters:
-    ///   - path: The path component to append to the base URL.
-    ///   - headers: Optional HTTP headers to include in the request.
-    ///   - queryItems: Optional key-value pairs for the query string.
-    ///   - data: Optional raw `Data` payload to include in the request body.
-    ///   - fragment: Optional URL fragment to append after the query string.
-    ///   - cachePolicy: Optional caching policy. If `nil`, the default policy is applied.
-    /// - Returns: A result containing either a `MercurySuccess` or a `MercuryFailure` (including the request signature).
-    func post(
-        _ path: String,
+    /// - Returns: A result containing the decoded response and metadata, or a failure.
+    func get<Response: Decodable>(
+        path: String,
         headers: [String: String]?,
-        queryItems: [String: String]?,
-        data: Data?,
-        fragment: String?,
-        cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<MercurySuccess, MercuryFailure>
-
-    /// Performs an HTTP POST request by encoding an `Encodable` object into JSON.
-    ///
-    /// - Parameters:
-    ///   - path: The path component to append to the base URL.
-    ///   - headers: Optional HTTP headers to include in the request.
-    ///   - queryItems: Optional key-value pairs for the query string.
-    ///   - body: An encodable object to be serialized as JSON in the request body.
-    ///   - fragment: Optional URL fragment to append after the query string.
-    ///   - cachePolicy: Optional caching policy. If `nil`, the default policy is applied.
-    ///   - encoder: The `JSONEncoder` to use for encoding the object. Defaults to a new `JSONEncoder`.
-    /// - Returns: A result containing either a `MercurySuccess` or a `MercuryFailure` (including the request signature).
-    func post<T: Encodable>(
-        _ path: String,
-        headers: [String: String]?,
-        queryItems: [String: String]?,
-        body: T,
+        query: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
-        encoder: JSONEncoder
-    ) async -> Result<MercurySuccess, MercuryFailure>
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
-    /// Performs an HTTP PUT request to the specified path, with optional raw body data.
+    /// Sends a `POST` request with an optional encodable body and decodes the response.
+    ///
+    /// Use this to create a resource or trigger a non-idempotent server action.
     ///
     /// - Parameters:
-    ///   - path: The path component to append to the base URL.
+    ///   - path: The relative path to append to the base URL.
+    ///   - body: An optional `Encodable` value to send as JSON in the request body.
     ///   - headers: Optional HTTP headers to include in the request.
-    ///   - queryItems: Optional key-value pairs for the query string.
-    ///   - body: Optional raw `Data` payload to include in the request body.
-    ///   - fragment: Optional URL fragment to append after the query string.
-    ///   - cachePolicy: Optional caching policy. If `nil`, the default policy is applied.
-    /// - Returns: A result containing either a `MercurySuccess` or a `MercuryFailure` (including the request signature).
-    func put(
-        _ path: String,
+    ///   - query: Optional query parameters to include in the URL.
+    ///   - fragment: Optional URL fragment.
+    ///   - cachePolicy: Optional caching behavior override.
+    ///   - responseType: The expected `Decodable` response type.
+    ///
+    /// - Returns: A result containing the decoded response and metadata, or a failure.
+    func post<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
         headers: [String: String]?,
-        queryItems: [String: String]?,
-        body: Data?,
+        query: [String: String]?,
         fragment: String?,
-        cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<MercurySuccess, MercuryFailure>
+        cachePolicy: URLRequest.CachePolicy?,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
-    /// Performs an HTTP PATCH request to the specified path, with optional raw body data.
+    /// Sends a `PUT` request with an optional encodable body and decodes the response.
+    ///
+    /// Use this to fully replace a resource.
     ///
     /// - Parameters:
-    ///   - path: The path component to append to the base URL.
+    ///   - path: The relative path to append to the base URL.
+    ///   - body: An optional `Encodable` value to send as JSON in the request body.
     ///   - headers: Optional HTTP headers to include in the request.
-    ///   - queryItems: Optional key-value pairs for the query string.
-    ///   - body: Optional raw `Data` payload to include in the request body.
-    ///   - fragment: Optional URL fragment to append after the query string.
-    ///   - cachePolicy: Optional caching policy. If `nil`, the default policy is applied.
-    /// - Returns: A result containing either a `MercurySuccess` or a `MercuryFailure` (including the request signature).
-    func patch(
-        _ path: String,
+    ///   - query: Optional query parameters to include in the URL.
+    ///   - fragment: Optional URL fragment.
+    ///   - cachePolicy: Optional caching behavior override.
+    ///   - responseType: The expected `Decodable` response type.
+    ///
+    /// - Returns: A result containing the decoded response and metadata, or a failure.
+    func put<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
         headers: [String: String]?,
-        queryItems: [String: String]?,
-        body: Data?,
+        query: [String: String]?,
         fragment: String?,
-        cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<MercurySuccess, MercuryFailure>
+        cachePolicy: URLRequest.CachePolicy?,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
-    /// Performs an HTTP DELETE request to the specified path, with optional raw body data.
+    /// Sends a `PATCH` request with an optional encodable body and decodes the response.
+    ///
+    /// Use this to partially update a resource.
     ///
     /// - Parameters:
-    ///   - path: The path component to append to the base URL.
+    ///   - path: The relative path to append to the base URL.
+    ///   - body: An optional `Encodable` value to send as JSON in the request body.
     ///   - headers: Optional HTTP headers to include in the request.
-    ///   - queryItems: Optional key-value pairs for the query string.
-    ///   - body: Optional raw `Data` payload to include in the request body.
-    ///   - fragment: Optional URL fragment to append after the query string.
-    ///   - cachePolicy: Optional caching policy. If `nil`, the default policy is applied.
-    /// - Returns: A result containing either a `MercurySuccess` or a `MercuryFailure` (including the request signature).
-    func delete(
-        _ path: String,
+    ///   - query: Optional query parameters to include in the URL.
+    ///   - fragment: Optional URL fragment.
+    ///   - cachePolicy: Optional caching behavior override.
+    ///   - responseType: The expected `Decodable` response type.
+    ///
+    /// - Returns: A result containing the decoded response and metadata, or a failure.
+    func patch<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
         headers: [String: String]?,
-        queryItems: [String: String]?,
-        body: Data?,
+        query: [String: String]?,
         fragment: String?,
-        cachePolicy: URLRequest.CachePolicy?
-    ) async -> Result<MercurySuccess, MercuryFailure>
+        cachePolicy: URLRequest.CachePolicy?,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure>
+
+    /// Sends a `DELETE` request with an optional encodable body and decodes the response.
+    ///
+    /// Use this to delete a resource or trigger a delete action with additional context.
+    ///
+    /// - Parameters:
+    ///   - path: The relative path to append to the base URL.
+    ///   - body: An optional `Encodable` value to send as JSON in the request body.
+    ///   - headers: Optional HTTP headers to include in the request.
+    ///   - query: Optional query parameters to include in the URL.
+    ///   - fragment: Optional URL fragment.
+    ///   - cachePolicy: Optional caching behavior override.
+    ///   - responseType: The expected `Decodable` response type.
+    ///
+    /// - Returns: A result containing the decoded response and metadata, or a failure.
+    func delete<Body: Encodable, Response: Decodable>(
+        path: String,
+        body: Body?,
+        headers: [String: String]?,
+        query: [String: String]?,
+        fragment: String?,
+        cachePolicy: URLRequest.CachePolicy?,
+        responseType: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 }
