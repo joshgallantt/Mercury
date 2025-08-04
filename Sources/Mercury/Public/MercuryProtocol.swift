@@ -329,7 +329,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await post(
             path: path,
-            body: nil as MercuryEmptyDecodableBody?,
+            body: nil as MercuryEmptyBody?,
             headers: headers,
             query: query,
             fragment: fragment,
@@ -361,7 +361,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await put(
             path: path,
-            body: nil as MercuryEmptyDecodableBody?,
+            body: nil as MercuryEmptyBody?,
             headers: headers,
             query: query,
             fragment: fragment,
@@ -393,7 +393,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await patch(
             path: path,
-            body: nil as MercuryEmptyDecodableBody?,
+            body: nil as MercuryEmptyBody?,
             headers: headers,
             query: query,
             fragment: fragment,
@@ -425,7 +425,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await delete(
             path: path,
-            body: nil as MercuryEmptyDecodableBody?,
+            body: nil as MercuryEmptyBody?,
             headers: headers,
             query: query,
             fragment: fragment,
