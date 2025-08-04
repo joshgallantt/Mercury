@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents a failed HTTP request, including a machine-readable error and the request signature.
-public struct MercuryFailure: Error {
+public struct MercuryFailure: Error, CustomStringConvertible {
     /// The specific failure reason.
     public let error: MercuryError
 
@@ -18,5 +18,10 @@ public struct MercuryFailure: Error {
     public init(error: MercuryError, requestSignature: String) {
         self.error = error
         self.requestSignature = requestSignature
+    }
+
+    /// A textual description of the failure, delegating to the underlying `MercuryError`.
+    public var description: String {
+        error.description
     }
 }

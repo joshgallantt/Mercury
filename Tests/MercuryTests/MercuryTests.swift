@@ -479,5 +479,64 @@ final class MercuryTests: XCTestCase {
         }
     }
     
+    func test_givenNestedEncodable_whenPost_thenEncodesSuccessfully_andIncludesSignature() async {
+        struct Inner: Encodable { let id: Int }
+        struct Outer: Encodable { let name: String; let inner: Inner }
+
+        let payload = Outer(name: "Josh", inner: Inner(id: 99))
+        let (mockData, mockResponse) = makeMockResponse(statusCode: 200)
+        let session = MockMercurySession(scenario: .success(mockData, mockResponse))
+        let client = makeClient(session: session)
+
+        var capturedBody: Data?
+        session.onRequest = { request in
+            capturedBody = request.httpBody
+            return (mockData, mockResponse)
+        }
+
+        let result = await client.post(path: "/nested", body: payload, responseType: Data.self)
+
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.value, mockData)
+            XCTAssertFalse(success.requestSignature.isEmpty)
+
+            guard let body = capturedBody else {
+                return XCTFail("Expected captured HTTP body")
+            }
+
+            let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+            XCTAssertEqual(json?["name"] as? String, "Josh")
+            if let inner = json?["inner"] as? [String: Any] {
+                XCTAssertEqual(inner["id"] as? Int, 99)
+            } else {
+                XCTFail("Missing nested 'inner' object")
+            }
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+    func test_givenNestedDecodable_whenGet_thenDecodesSuccessfully_andIncludesSignature() async {
+        struct Inner: Decodable, Equatable { let id: Int }
+        struct Outer: Decodable, Equatable { let name: String; let inner: Inner }
+
+        let json = #"{"name":"Josh","inner":{"id":42}}"#
+        let data = Data(json.utf8)
+        let response = HTTPURLResponse(url: URL(string: "https://host.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        let result = await client.get(path: "/nested", responseType: Outer.self)
+
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.value, Outer(name: "Josh", inner: Inner(id: 42)))
+            XCTAssertEqual(success.httpResponse.statusCode, 200)
+            XCTAssertFalse(success.requestSignature.isEmpty)
+        default:
+            XCTFail("Expected success")
+        }
+    }
 }
 

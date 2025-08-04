@@ -18,7 +18,7 @@ final class MercuryFailureTests: XCTestCase {
         }
     }
     
-    func test_givenInvalidURLError_whenInit_thenPropertiesAreSet() {
+    func test_givenInvalidURLError_whenInit_thenPropertiesAndDescriptionMatch() {
         // Given
         let error: MercuryError = .invalidURL
         let signature = "GET:/v1/resource"
@@ -28,8 +28,8 @@ final class MercuryFailureTests: XCTestCase {
         
         // Then
         XCTAssertEqual(failure.requestSignature, signature)
-        // CustomStringConvertible test
         XCTAssertEqual(error.description, "Invalid URL")
+        XCTAssertEqual(failure.description, error.description)
     }
 
     func test_givenServerErrorWithData_whenInit_thenDescriptionIncludesBody() {
@@ -45,6 +45,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertTrue(error.description.contains("Server returned status code 500 with body"))
         XCTAssertTrue(error.description.contains("Oops"))
         XCTAssertEqual(failure.requestSignature, signature)
+        XCTAssertEqual(failure.description, error.description)
     }
 
     func test_givenServerErrorWithoutData_whenInit_thenDescriptionOmitsBody() {
@@ -58,6 +59,7 @@ final class MercuryFailureTests: XCTestCase {
         // Then
         XCTAssertEqual(error.description, "Server returned status code 401")
         XCTAssertEqual(failure.requestSignature, signature)
+        XCTAssertEqual(failure.description, error.description)
     }
 
     func test_givenInvalidResponseError_whenInit_thenDescriptionIsCorrect() {
@@ -71,6 +73,7 @@ final class MercuryFailureTests: XCTestCase {
         // Then
         XCTAssertEqual(error.description, "Invalid or unexpected response from server")
         XCTAssertEqual(failure.requestSignature, signature)
+        XCTAssertEqual(failure.description, error.description)
     }
 
     func test_givenTransportError_whenInit_thenDescriptionContainsUnderlyingError() {
@@ -86,6 +89,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertTrue(error.description.contains("Transport error"))
         XCTAssertTrue(error.description.contains("Timeout"))
         XCTAssertEqual(failure.requestSignature, signature)
+        XCTAssertEqual(failure.description, error.description)
     }
 
     func test_givenEncodingError_whenInit_thenDescriptionContainsUnderlyingError() {
@@ -101,6 +105,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertTrue(error.description.contains("Encoding error"))
         XCTAssertTrue(error.description.contains("Invalid JSON"))
         XCTAssertEqual(failure.requestSignature, signature)
+        XCTAssertEqual(failure.description, error.description)
     }
 
     func test_givenDecodingFailedError_whenInit_thenDescriptionIsAccurate() {
@@ -116,5 +121,6 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertTrue(error.description.contains("Decoding failed in 'User' for key 'id'"))
         XCTAssertTrue(error.description.contains("Missing key 'id'"))
         XCTAssertEqual(failure.requestSignature, signature)
+        XCTAssertEqual(failure.description, error.description)
     }
 }
