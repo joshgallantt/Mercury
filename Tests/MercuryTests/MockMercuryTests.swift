@@ -11,6 +11,35 @@ import XCTest
 
 final class MockMercuryTests: XCTestCase {
     
+    struct User: Codable, Equatable {
+        let id: Int
+        let name: String
+        let email: String
+    }
+
+    class UserService {
+        private let mercury: MercuryProtocol
+        
+        init(mercury: MercuryProtocol) {
+            self.mercury = mercury
+        }
+        
+        func fetchUser(id: Int) async -> Result<User, Error> {
+            let result = await mercury.get(
+                path: "/users/\(id)",
+                headers: nil,
+                query: nil,
+                fragment: nil,
+                cachePolicy: nil,
+                responseType: User.self
+            )
+            
+            return result
+                .map { $0.value }
+                .mapError { $0 as Error }
+        }
+    }
+    
     private var mockMercury: MockMercury!
     
     override func setUp() {
@@ -503,12 +532,12 @@ final class MockMercuryTests: XCTestCase {
 final class UserServiceTests: XCTestCase {
     
     private var mockMercury: MockMercury!
-    private var userService: UserService!
+    private var userService: MockMercuryTests.UserService!
     
     override func setUp() {
         super.setUp()
         mockMercury = Mercury.mock()
-        userService = UserService(mercury: mockMercury)
+        userService = MockMercuryTests.UserService(mercury: mockMercury)
     }
     
     override func tearDown() {
@@ -519,7 +548,7 @@ final class UserServiceTests: XCTestCase {
     
     func test_givenValidUserId_whenFetchUser_thenReturnsUser() async {
         // Given
-        let expectedUser = User(id: 123, name: "John Doe", email: "john@example.com")
+        let expectedUser = MockMercuryTests.User(id: 123, name: "John Doe", email: "john@example.com")
         mockMercury.stubGet(path: "/users/123", response: expectedUser)
         
         // When
@@ -538,7 +567,7 @@ final class UserServiceTests: XCTestCase {
     func test_givenNetworkError_whenFetchUser_thenReturnsTransportError() async {
         // Given
         let networkError = MercuryError.transport(URLError(.notConnectedToInternet))
-        mockMercury.stubFailure(method: .GET, path: "/users/123", error: networkError, responseType: User.self)
+        mockMercury.stubFailure(method: .GET, path: "/users/123", error: networkError, responseType: MockMercuryTests.User.self)
         
         // When
         let result = await userService.fetchUser(id: 123)
@@ -564,35 +593,3 @@ final class UserServiceTests: XCTestCase {
         }
     }
 }
-
-// MARK: - Supporting Types for Examples
-
-struct User: Codable, Equatable {
-    let id: Int
-    let name: String
-    let email: String
-}
-
-class UserService {
-    private let mercury: MercuryProtocol
-    
-    init(mercury: MercuryProtocol) {
-        self.mercury = mercury
-    }
-    
-    func fetchUser(id: Int) async -> Result<User, Error> {
-        let result = await mercury.get(
-            path: "/users/\(id)",
-            headers: nil,
-            query: nil,
-            fragment: nil,
-            cachePolicy: nil,
-            responseType: User.self
-        )
-        
-        return result
-            .map { $0.value }
-            .mapError { $0 as Error }
-    }
-}
-

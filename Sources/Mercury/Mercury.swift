@@ -17,7 +17,7 @@ public struct Mercury: MercuryProtocol {
     private let basePath: String
     private let defaultHeaders: [String: String]
     private let defaultCachePolicy: URLRequest.CachePolicy
-    private let session: URLSession
+    private let session: MercurySession
     
     // MARK: - Initialization
     
@@ -49,7 +49,7 @@ public struct Mercury: MercuryProtocol {
     internal init(
         host: String,
         port: Int? = nil,
-        session: URLSession,
+        session: MercurySession,
         defaultHeaders: [String: String] = [
             "Accept": "application/json",
             "Content-Type": "application/json"
@@ -189,12 +189,12 @@ public struct Mercury: MercuryProtocol {
         guard !host.isEmpty else {
             return .failure(MercuryFailure(error: .invalidURL, requestSignature: ""))
         }
-
+        
         // Step 2: Build URL
         guard let url = buildURL(path: path, query: query, fragment: fragment) else {
             return .failure(MercuryFailure(error: .invalidURL, requestSignature: ""))
         }
-
+        
         // Step 3: Encode body only if present
         var bodyData: Data? = nil
         if let body {
@@ -205,7 +205,7 @@ public struct Mercury: MercuryProtocol {
                 return .failure(MercuryFailure(error: error, requestSignature: ""))
             }
         }
-
+        
         // Step 4: Build request
         let request = buildRequest(
             url: url,
@@ -214,13 +214,13 @@ public struct Mercury: MercuryProtocol {
             body: bodyData,
             cachePolicy: cachePolicy
         )
-
+        
         // Step 5: Generate signature
         let signature = generateSignature(for: request)
-
+        
         // Step 6: Execute request
         let networkResult = await executeRequest(request)
-
+        
         // Step 7: Handle response
         return result(
             networkResult: networkResult,
@@ -360,22 +360,45 @@ public struct Mercury: MercuryProtocol {
         signature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         do {
+            // Handle Data.self
+            if responseType == Data.self, let value = data as? Response {
+                return .success(MercurySuccess(
+                    value: value,
+                    httpResponse: httpResponse,
+                    requestSignature: signature
+                ))
+            }
+            
+            // Handle String.self
+            if responseType == String.self, let string = String(data: data, encoding: .utf8), let value = string as? Response {
+                return .success(MercurySuccess(
+                    value: value,
+                    httpResponse: httpResponse,
+                    requestSignature: signature
+                ))
+            }
+            
+            // Otherwise, try JSON decoding
             let decoded = try JSONDecoder().decode(responseType, from: data)
-            return .success(MercurySuccess(
-                value: decoded,
-                httpResponse: httpResponse,
-                requestSignature: signature
-            ))
+            return .success(
+                MercurySuccess(
+                    value: decoded,
+                    httpResponse: httpResponse,
+                    requestSignature: signature
+                )
+            )
         } catch {
             let keyPath = extractKeyPath(from: error, for: responseType)
-            return .failure(MercuryFailure(
-                error: .decodingFailed(
-                    namespace: String(describing: responseType),
-                    key: keyPath,
-                    underlyingError: error
-                ),
-                requestSignature: signature
-            ))
+            return .failure(
+                MercuryFailure(
+                    error: .decodingFailed(
+                        namespace: String(describing: responseType),
+                        key: keyPath,
+                        underlyingError: error
+                    ),
+                    requestSignature: signature
+                )
+            )
         }
     }
     
@@ -391,8 +414,8 @@ public struct Mercury: MercuryProtocol {
         case .keyNotFound(let key, let context):
             return buildKeyPath(context.codingPath + [key])
         case .typeMismatch(_, let context),
-             .valueNotFound(_, let context),
-             .dataCorrupted(let context):
+                .valueNotFound(_, let context),
+                .dataCorrupted(let context):
             return buildKeyPath(context.codingPath)
         @unknown default:
             return "root"
@@ -440,3 +463,4 @@ public struct Mercury: MercuryProtocol {
             .joined(separator: "&")
     }
 }
+
