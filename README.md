@@ -17,7 +17,7 @@
 </div>
 
 
-Mercury is a lightweight and easy to use HTTP client for Swift that includes many quality of life features out of the box. It designed to remove networking boilerplate so you can focusing on building your app.
+Mercury is a lightweight and easy to use HTTP client for Swift that includes many quality of life features out of the box. Its designed to remove networking boilerplate so you can focusing on building your app.
 
 ## <br><br> Features
 
