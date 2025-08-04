@@ -8,7 +8,7 @@
 import Foundation
 
 /// Abstracts URLSession for injection/mocking in tests.
-protocol MercurySession {
+internal protocol MercurySession {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 

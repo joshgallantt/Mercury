@@ -306,7 +306,7 @@ public extension MercuryProtocol {
         )
     }
     
-    /// Sends a `POST` request with an optional encodable body and decodes the response.
+    /// Sends a `POST` request without a body and decodes the response.
     ///
     /// Use this to create a resource or trigger a non-idempotent server action.
     ///
@@ -329,7 +329,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await post(
             path: path,
-            body: nil as MercuryEmptyBody?,
+            body: nil as MercuryEmptyDecodableBody?,
             headers: headers,
             query: query,
             fragment: fragment,
@@ -338,7 +338,7 @@ public extension MercuryProtocol {
         )
     }
 
-    /// Sends a `PUT` request with an optional encodable body and decodes the response.
+    /// Sends a `PUT` request without a body and decodes the response.
     ///
     /// Use this to fully replace a resource.
     ///
@@ -361,7 +361,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await put(
             path: path,
-            body: nil as MercuryEmptyBody?,
+            body: nil as MercuryEmptyDecodableBody?,
             headers: headers,
             query: query,
             fragment: fragment,
@@ -370,7 +370,7 @@ public extension MercuryProtocol {
         )
     }
 
-    /// Sends a `PATCH` request with an optional encodable body and decodes the response.
+    /// Sends a `PATCH` request without a body and decodes the response.
     ///
     /// Use this to partially update a resource.
     ///
@@ -393,7 +393,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await patch(
             path: path,
-            body: nil as MercuryEmptyBody?,
+            body: nil as MercuryEmptyDecodableBody?,
             headers: headers,
             query: query,
             fragment: fragment,
@@ -402,7 +402,7 @@ public extension MercuryProtocol {
         )
     }
 
-    /// Sends a `DELETE` request with an optional encodable body and decodes the response.
+    /// Sends a `DELETE` request without a body and decodes the response.
     ///
     /// Use this to delete a resource or trigger a delete action with additional context.
     ///
@@ -425,7 +425,7 @@ public extension MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await delete(
             path: path,
-            body: nil as MercuryEmptyBody?,
+            body: nil as MercuryEmptyDecodableBody?,
             headers: headers,
             query: query,
             fragment: fragment,

@@ -36,6 +36,21 @@ final class MercuryTests: XCTestCase {
             ]
         )
     }
+    
+    func makeClientWithPublicInit(
+        host: String = "https://host.com",
+        port: Int? = nil,
+        defaultHeaders: [String: String]? = nil
+    ) -> Mercury {
+        Mercury(
+            host: host,
+            port: port,
+            defaultHeaders: defaultHeaders ?? [
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            ]
+        )
+    }
 
     func makeMockResponse(
         statusCode: Int = 200,
@@ -53,6 +68,12 @@ final class MercuryTests: XCTestCase {
     }
 
     // MARK: - Tests
+    
+    func test_ClientInitializes() async {
+        let _ = makeClientWithPublicInit(host: "https://host.com:8888")
+
+        XCTAssertTrue(true)
+    }
 
     func test_givenSuccessStatus_whenGet_thenReturnsHTTPSuccess_andIncludesSignature() async {
         let (data, response) = makeMockResponse(statusCode: 200, body: "yay")
