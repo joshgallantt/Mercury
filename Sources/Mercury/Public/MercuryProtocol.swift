@@ -20,8 +20,6 @@ public protocol MercuryProtocol {
 
     /// Sends a `GET` request and decodes the response into the specified type.
     ///
-    /// Use this for retrieving data without a request body.
-    ///
     /// - Parameters:
     ///   - path: The relative path to append to the base URL (e.g., `"/search/multi"`).
     ///   - headers: Optional HTTP headers to include in the request.
@@ -140,8 +138,6 @@ public protocol MercuryProtocol {
 public extension MercuryProtocol {
     
     /// Sends a `GET` request and decodes the response into the specified type.
-    ///
-    /// Use this for retrieving data without a request body.
     ///
     /// - Parameters:
     ///   - path: The relative path to append to the base URL (e.g., `"/search/multi"`).
