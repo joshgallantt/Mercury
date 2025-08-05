@@ -2,48 +2,46 @@
 //  MockMercurySession.swift
 //  Mercury
 //
-//  Created by Josh Gallant on 04/08/2025.
+//  Created by Josh Gallant on 05/08/2025.
 //
 
 
 import XCTest
 @testable import Mercury
 
-final class MockMercurySession: MercurySession {
-    
-    // MARK: - Types
+public final class MockMercurySession: MercurySession {
     
     enum Scenario {
         case success(Data, URLResponse)
         case error(Error)
     }
     
-    // MARK: - Properties
-    
     private let scenario: Scenario
     var onRequest: ((URLRequest) -> (Data, URLResponse))?
-    
-    // MARK: - Initialization
     
     init(scenario: Scenario) {
         self.scenario = scenario
     }
     
-    // MARK: - MercurySession
-    
-    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        // If onRequest is set, use it for custom behavior
+    public func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         if let onRequest = onRequest {
-            let (data, response) = onRequest(request)
-            return (data, response)
+            return onRequest(request)
         }
         
-        // Otherwise use the scenario
         switch scenario {
         case .success(let data, let response):
             return (data, response)
         case .error(let error):
             throw error
+        }
+    }
+}
+
+extension Result {
+    var isFailure: Bool {
+        switch self {
+        case .success: return false
+        case .failure: return true
         }
     }
 }
