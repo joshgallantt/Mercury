@@ -19,7 +19,7 @@ public struct Mercury: MercuryProtocol {
     private let session: MercurySession
     
     // Cache
-    private let cacheOption: MercuryCacheOption
+    private let cacheOption: MercuryCacheContext
     private let urlCache: URLCache?
     private let defaultCachePolicy: URLRequest.CachePolicy
     
@@ -58,7 +58,7 @@ public struct Mercury: MercuryProtocol {
             "Content-Type": "application/json"
         ],
         defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
-        cacheOption: MercuryCacheOption = .shared
+        cacheOption: MercuryCacheContext = .shared
     ) {
         let components = URLComponentsParser.parse(host)
         self.scheme = components.scheme
@@ -100,7 +100,7 @@ public struct Mercury: MercuryProtocol {
             "Content-Type": "application/json"
         ],
         defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
-        cacheOption: MercuryCacheOption = .shared,
+        cacheOption: MercuryCacheContext = .shared,
         urlCache: URLCache? = nil
     ) {
         let components = URLComponentsParser.parse(host)
