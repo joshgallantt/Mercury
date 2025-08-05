@@ -42,8 +42,7 @@ final class MercuryFailureTests: XCTestCase {
         let failure = MercuryFailure(error: error, requestSignature: signature)
         
         // Then
-        XCTAssertTrue(error.description.contains("Server returned status code 500 with body"))
-        XCTAssertTrue(error.description.contains("Oops"))
+        XCTAssertEqual(error.description, "500 Internal Server Error: Oops")
         XCTAssertEqual(failure.requestSignature, signature)
         XCTAssertEqual(failure.description, error.description)
     }
@@ -57,7 +56,7 @@ final class MercuryFailureTests: XCTestCase {
         let failure = MercuryFailure(error: error, requestSignature: signature)
         
         // Then
-        XCTAssertEqual(error.description, "Server returned status code 401")
+        XCTAssertEqual(error.description, "401 Unauthorized")
         XCTAssertEqual(failure.requestSignature, signature)
         XCTAssertEqual(failure.description, error.description)
     }
