@@ -538,5 +538,273 @@ final class MercuryTests: XCTestCase {
             XCTFail("Expected success")
         }
     }
+    
+    func test_givenHeadersInDifferentOrder_whenGet_thenSignatureIsIdentical() async {
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        let result1 = await client.get(
+            path: "/sigtest",
+            headers: ["X-Auth": "token", "Accept": "application/json"],
+            responseType: Data.self
+        )
+        let result2 = await client.get(
+            path: "/sigtest",
+            headers: ["Accept": "application/json", "X-Auth": "token"],
+            responseType: Data.self
+        )
+
+        var sig1 = ""
+        switch result1 {
+        case .success(let success): sig1 = success.requestSignature
+        case .failure(let failure): sig1 = failure.requestSignature
+        }
+        var sig2 = ""
+        switch result2 {
+        case .success(let success): sig2 = success.requestSignature
+        case .failure(let failure): sig2 = failure.requestSignature
+        }
+
+        XCTAssertEqual(sig1, sig2, "Signature should be the same for headers in any order")
+    }
+
+    func test_givenIdenticalRequestMultipleTimes_thenSignatureIsStable() async {
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        var signatures = Set<String>()
+        for _ in 0..<5 {
+            let result = await client.get(path: "/deterministic", responseType: Data.self)
+            switch result {
+            case .success(let success): signatures.insert(success.requestSignature)
+            case .failure(let failure): signatures.insert(failure.requestSignature)
+            }
+        }
+        XCTAssertEqual(signatures.count, 1, "Signature should be stable and deterministic across identical requests")
+    }
+
+    func test_givenRequestsWithDifferentHeaders_thenSignatureIsDifferent() async {
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        let result1 = await client.get(
+            path: "/diff",
+            headers: ["A": "1"],
+            responseType: Data.self
+        )
+        let result2 = await client.get(
+            path: "/diff",
+            headers: ["A": "2"],
+            responseType: Data.self
+        )
+
+        var sig1 = ""
+        switch result1 {
+        case .success(let success): sig1 = success.requestSignature
+        case .failure(let failure): sig1 = failure.requestSignature
+        }
+        var sig2 = ""
+        switch result2 {
+        case .success(let success): sig2 = success.requestSignature
+        case .failure(let failure): sig2 = failure.requestSignature
+        }
+
+        XCTAssertNotEqual(sig1, sig2, "Signature should differ for different headers")
+    }
+
+    func test_givenRequestsWithDifferentMethod_thenSignatureIsDifferent() async {
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        let getResult = await client.get(path: "/method", responseType: Data.self)
+        let postResult = await client.post(path: "/method", body: Data(), responseType: Data.self)
+
+        var getSig = ""
+        switch getResult {
+        case .success(let success): getSig = success.requestSignature
+        case .failure(let failure): getSig = failure.requestSignature
+        }
+        var postSig = ""
+        switch postResult {
+        case .success(let success): postSig = success.requestSignature
+        case .failure(let failure): postSig = failure.requestSignature
+        }
+
+        XCTAssertNotEqual(getSig, postSig, "Signature should differ for GET vs POST")
+    }
+
+    func test_givenRequestsWithDifferentURLs_thenSignatureIsDifferent() async {
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        let result1 = await client.get(path: "/a", responseType: Data.self)
+        let result2 = await client.get(path: "/b", responseType: Data.self)
+
+        var sig1 = ""
+        switch result1 {
+        case .success(let success): sig1 = success.requestSignature
+        case .failure(let failure): sig1 = failure.requestSignature
+        }
+        var sig2 = ""
+        switch result2 {
+        case .success(let success): sig2 = success.requestSignature
+        case .failure(let failure): sig2 = failure.requestSignature
+        }
+
+        XCTAssertNotEqual(sig1, sig2, "Signature should differ for different URLs")
+    }
+
+    func test_givenSimpleGetRequest_whenGet_thenRequestStringIsCanonical() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        
+        // When
+        let result = await client.get(
+            path: "/users/123",
+            headers: ["Accept": "application/json"],
+            responseType: Data.self
+        )
+        
+        // Then
+        switch result {
+        case .success(let success):
+            // Both headers, sorted and lowercased, in canonical string:
+            let expected = "GET|https://host.com/users/123|headers:accept:application/json&content-type:application/json"
+            XCTAssertEqual(success.requestString, expected)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+    
+    func test_givenCustomHeaderCasing_whenMerged_thenCustomCasingWinsAndNoDuplicates() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        let customHeaders = ["content-type": "custom/type", "X-Api-Token": "abc123"]
+        var capturedHeaders: [String: String] = [:]
+        session.onRequest = { request in
+            capturedHeaders = request.allHTTPHeaderFields ?? [:]
+            return (data, response)
+        }
+        
+        // When
+        let result = await client.get(
+            path: "/casing",
+            headers: customHeaders,
+            responseType: Data.self
+        )
+        
+        // Then
+        switch result {
+        case .success:
+            XCTAssertEqual(capturedHeaders["Content-Type"], "custom/type")
+            XCTAssertEqual(capturedHeaders["X-Api-Token"], "abc123")
+            XCTAssertEqual(capturedHeaders["Accept"], "application/json")
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+    func test_givenHeadersInDifferentOrder_whenGet_thenRequestStringIsIdentical() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        let headers1 = ["X-Foo": "bar", "Accept": "application/json"]
+        let headers2 = ["Accept": "application/json", "X-Foo": "bar"]
+        
+        // When
+        let result1 = await client.get(path: "/alpha", headers: headers1, responseType: Data.self)
+        let result2 = await client.get(path: "/alpha", headers: headers2, responseType: Data.self)
+        
+        // Then
+        var s1 = "", s2 = ""
+        switch result1 {
+        case .success(let success): s1 = success.requestString
+        default: XCTFail("Expected success")
+        }
+        switch result2 {
+        case .success(let success): s2 = success.requestString
+        default: XCTFail("Expected success")
+        }
+        XCTAssertEqual(s1, s2, "Request string should be identical regardless of header order")
+    }
+
+    func test_givenCustomContentType_whenMergedWithDefault_thenCustomOverridesInRequestString() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        // Client defaults: Accept and Content-Type
+        let client = makeClient(session: session)
+
+        // Per-request headers override Content-Type only
+        let customHeaders = [
+            "Content-Type": "custom/type",
+            "X-Token": "abc"
+        ]
+
+        // When
+        let result = await client.post(path: "/thing", body: Data(), headers: customHeaders, responseType: Data.self)
+
+        // Then
+        switch result {
+        case .success(let success):
+            let expected = "POST|https://host.com/thing|headers:accept:application/json&content-type:custom/type&x-token:abc"
+            XCTAssertEqual(success.requestString, expected)
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+    func test_givenRequestsWithDifferentHeaders_thenRequestStringIsDifferent() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        
+        let result1 = await client.get(path: "/abc", headers: ["A": "1"], responseType: Data.self)
+        let result2 = await client.get(path: "/abc", headers: ["A": "2"], responseType: Data.self)
+        
+        var s1 = "", s2 = ""
+        switch result1 {
+        case .success(let success): s1 = success.requestString
+        default: XCTFail("Expected success")
+        }
+        switch result2 {
+        case .success(let success): s2 = success.requestString
+        default: XCTFail("Expected success")
+        }
+        XCTAssertNotEqual(s1, s2, "Request string should differ for different header values")
+    }
+
+    func test_givenRequestsWithDifferentPaths_thenRequestStringIsDifferent() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        
+        let result1 = await client.get(path: "/foo", responseType: Data.self)
+        let result2 = await client.get(path: "/bar", responseType: Data.self)
+        
+        var s1 = "", s2 = ""
+        switch result1 {
+        case .success(let success): s1 = success.requestString
+        default: XCTFail("Expected success")
+        }
+        switch result2 {
+        case .success(let success): s2 = success.requestString
+        default: XCTFail("Expected success")
+        }
+        XCTAssertNotEqual(s1, s2, "Request string should differ for different URLs")
+    }
+
 }
 

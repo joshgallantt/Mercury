@@ -25,20 +25,23 @@ final class MercurySuccessTests: XCTestCase {
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
         )!
-        let signature = "unique-signature-123"
-        
+
+        let canonicalRequestString = "GET|https://example.com|headers:content-type:application/json"
+        let expectedSignature = "9ad8ee00464c4c11f514a657e92a9ad66381bbeac1ea2098b7edd87800d6981d"
+
         // When
         let success = MercurySuccess(
             value: dummyValue,
             httpResponse: response,
-            requestSignature: signature
+            requestString: canonicalRequestString
         )
-        
+
         // Then
         XCTAssertEqual(success.value, dummyValue)
         XCTAssertEqual(success.httpResponse.statusCode, 200)
         XCTAssertEqual(success.httpResponse.url, url)
-        XCTAssertEqual(success.requestSignature, signature)
+        XCTAssertEqual(success.requestString, canonicalRequestString)
+        XCTAssertEqual(success.requestSignature, expectedSignature)
     }
     
     func test_givenDifferentValues_whenInit_thenDistinctInstances() {
@@ -53,8 +56,8 @@ final class MercurySuccessTests: XCTestCase {
         let sigB = "sigB"
         
         // When
-        let successA = MercurySuccess(value: dummyA, httpResponse: responseA, requestSignature: sigA)
-        let successB = MercurySuccess(value: dummyB, httpResponse: responseB, requestSignature: sigB)
+        let successA = MercurySuccess(value: dummyA, httpResponse: responseA, requestString: sigA)
+        let successB = MercurySuccess(value: dummyB, httpResponse: responseB, requestString: sigB)
         
         // Then
         XCTAssertNotEqual(successA.value, successB.value)
@@ -70,7 +73,7 @@ final class MercurySuccessTests: XCTestCase {
         let signature = "int-sig"
         
         // When
-        let success = MercurySuccess(value: value, httpResponse: response, requestSignature: signature)
+        let success = MercurySuccess(value: value, httpResponse: response, requestString: signature)
         
         // Then
         XCTAssertEqual(success.value, 123)

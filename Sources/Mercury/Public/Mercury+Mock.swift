@@ -97,7 +97,7 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         let success = MercurySuccess(
             value: response,
             httpResponse: httpResponse,
-            requestSignature: "\(method.rawValue) \(path)"
+            requestString: "\(method.rawValue) \(path)"
         )
         let stubbedResponse = StubbedResponse(result: .success(success), delay: delay)
         let key = stubKey(method: method, path: path)

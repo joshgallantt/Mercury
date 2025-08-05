@@ -280,12 +280,21 @@ public struct Mercury: MercuryProtocol {
     }
     
     private func mergeHeaders(_ customHeaders: [String: String]?) -> [String: String] {
-        guard let customHeaders = customHeaders else {
-            return defaultHeaders
+        // Step 1: Start with defaults, store mapping of lowercased -> original casing key
+        var merged = [String: (originalKey: String, value: String)]()
+        for (key, value) in defaultHeaders {
+            merged[key.lowercased()] = (key, value)
         }
-        return defaultHeaders.merging(customHeaders) { _, custom in custom }
+        // Step 2: For each custom header, override (by lowercased key) and preserve custom's casing
+        if let customHeaders = customHeaders {
+            for (key, value) in customHeaders {
+                merged[key.lowercased()] = (key, value)
+            }
+        }
+        // Step 3: Return dictionary with preserved key casing from winner
+        return Dictionary(uniqueKeysWithValues: merged.values.map { ($0.originalKey, $0.value) })
     }
-    
+
     private func encodeBody<Body: Encodable>(_ body: Body?) -> Result<Data?, MercuryError> {
         guard let body = body else {
             return .success(nil)
@@ -371,7 +380,7 @@ public struct Mercury: MercuryProtocol {
                 return .success(MercurySuccess(
                     value: value,
                     httpResponse: httpResponse,
-                    requestSignature: signature
+                    requestString: signature
                 ))
             }
             
@@ -380,7 +389,7 @@ public struct Mercury: MercuryProtocol {
                 return .success(MercurySuccess(
                     value: value,
                     httpResponse: httpResponse,
-                    requestSignature: signature
+                    requestString: signature
                 ))
             }
             
@@ -390,7 +399,7 @@ public struct Mercury: MercuryProtocol {
                 MercurySuccess(
                     value: decoded,
                     httpResponse: httpResponse,
-                    requestSignature: signature
+                    requestString: signature
                 )
             )
         } catch {
@@ -441,11 +450,6 @@ public struct Mercury: MercuryProtocol {
         // Add URL
         if let url = request.url?.absoluteString {
             components.append(url)
-        }
-        
-        // Add body hash if present
-        if let body = request.httpBody, !body.isEmpty {
-            components.append("body:\(hashData(body))")
         }
         
         // Add headers if present
