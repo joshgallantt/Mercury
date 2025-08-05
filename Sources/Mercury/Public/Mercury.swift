@@ -25,6 +25,31 @@ public struct Mercury: MercuryProtocol {
     
     // MARK: - Initialization
     
+    /// Creates a new Mercury HTTP client instance targeting a specific host, with configurable headers and caching.
+    ///
+    /// This initializer parses the host string for scheme, host, port, and base path components, allowing for convenient usage such as:
+    /// ```swift
+    /// Mercury(host: "https://api.example.com/v1")
+    /// ```
+    /// - Parameters:
+    ///   - host: The API host, optionally including scheme, port, and base path. E.g., `"https://api.example.com:8080/v1"`.
+    ///   - port: Overrides the port parsed from `host`. If not provided, the port from `host` is used if present.
+    ///   - defaultHeaders: Default HTTP headers to include with every request. The default is `["Accept": "application/json", "Content-Type": "application/json"]`.
+    ///   - defaultCachePolicy: The cache policy applied to all requests unless overridden per-request. Defaults to `.useProtocolCachePolicy`.
+    ///   - cacheOption: Controls response caching. Use `.shared` for system-wide caching, or `.clientIsolated` to isolate cache usage per Mercury instance with custom memory/disk sizes.
+    ///
+    /// If `cacheOption` is `.clientIsolated`, a private `URLCache` is created for this instance. Otherwise, the global shared cache is used.
+    ///
+    /// Example:
+    /// ```swift
+    /// let client = Mercury(
+    ///     host: "https://api.example.com/v2",
+    ///     defaultHeaders: [
+    ///         "Authorization": "Bearer <token>"
+    ///     ],
+    ///     cacheOption: .clientIsolated(memorySize: 2_000_000, diskSize: 10_000_000)
+    /// )
+    /// ```
     public init(
         host: String,
         port: Int? = nil,
