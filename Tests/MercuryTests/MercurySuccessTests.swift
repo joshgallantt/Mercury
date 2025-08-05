@@ -79,4 +79,24 @@ final class MercurySuccessTests: XCTestCase {
         XCTAssertEqual(success.value, 123)
         XCTAssertTrue(type(of: success.value) == Int.self)
     }
+    
+    func test_givenEmptyRequestString_whenInit_thenRequestSignatureIsEmpty() {
+        // Given
+        let dummyValue = DummyDecodable(id: 1, name: "A")
+        let url = URL(string: "https://example.com")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let emptyRequestString = ""
+
+        // When
+        let success = MercurySuccess(
+            value: dummyValue,
+            httpResponse: response,
+            requestString: emptyRequestString
+        )
+
+        // Then
+        XCTAssertEqual(success.requestString, "")
+        XCTAssertEqual(success.requestSignature, "")
+    }
+
 }

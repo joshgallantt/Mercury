@@ -10,10 +10,14 @@ import CryptoKit
 
 /// Represents a failed HTTP request, including a machine-readable error and the request signature.
 public struct MercuryFailure: Error, CustomStringConvertible {
-    /// The specific failure reason.
+    
+    /// The decoded response value.
     public let error: MercuryError
 
-    /// A  string representing the request that failed.
+    /// The raw HTTP response metadata, if one was provided.
+    public var httpResponse: HTTPURLResponse? = nil
+    
+    /// A  string representing the request
     public let requestString: String
 
     /// A unique signature representing the request (useful for caching, debugging, etc).
@@ -27,8 +31,13 @@ public struct MercuryFailure: Error, CustomStringConvertible {
         return hash.map { String(format: "%02x", $0) }.joined()
     }
 
-    public init(error: MercuryError, requestString: String) {
+    public init(
+        error: MercuryError,
+        httpResponse: HTTPURLResponse? = nil,
+        requestString: String
+    ) {
         self.error = error
+        self.httpResponse = httpResponse
         self.requestString = requestString
     }
 

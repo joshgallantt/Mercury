@@ -10,6 +10,7 @@ import CryptoKit
 
 /// Represents a successful HTTP response with a decoded value.
 public struct MercurySuccess<Value: Decodable> {
+    
     /// The decoded response value.
     public let value: Value
 
@@ -21,6 +22,10 @@ public struct MercurySuccess<Value: Decodable> {
 
     /// A unique signature representing the request (useful for caching, debugging, etc).
     public var requestSignature: String {
+        guard !requestString.isEmpty else {
+            return ""
+        }
+        
         let data = Data(requestString.utf8)
         let hash = SHA256.hash(data: data)
         return hash.map { String(format: "%02x", $0) }.joined()

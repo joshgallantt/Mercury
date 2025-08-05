@@ -859,6 +859,120 @@ final class MercuryTests: XCTestCase {
         }
         XCTAssertNotEqual(sig1, sig2, "Signature should differ when fragment changes")
     }
+    
+    func test_givenServerFailure_whenGet_thenHttpResponseIsSet() async {
+        // Given
+        let (data, response) = makeMockResponse(statusCode: 404, body: "not found")
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
 
+        // When
+        let result = await client.get(path: "/api/404", responseType: Data.self)
+
+        // Then
+        switch result {
+        case .failure(let failure):
+            XCTAssertEqual(failure.httpResponse, response)
+        default:
+            XCTFail("Expected server failure")
+        }
+    }
+
+    func test_givenInvalidURL_whenGet_thenHttpResponseIsNil() async {
+        // Given
+        let session = MockMercurySession(scenario: .error(NSError(domain: "any", code: 1)))
+        let client = Mercury(host: "", session: session)
+
+        // When
+        let result = await client.get(path: "/invalid", responseType: Data.self)
+
+        // Then
+        switch result {
+        case .failure(let failure):
+            XCTAssertNil(failure.httpResponse)
+        default:
+            XCTFail("Expected invalidURL failure")
+        }
+    }
+
+    func test_givenTransportError_whenGet_thenHttpResponseIsNil() async {
+        // Given
+        let error = NSError(domain: "network", code: 123)
+        let session = MockMercurySession(scenario: .error(error))
+        let client = makeClient(session: session)
+
+        // When
+        let result = await client.get(path: "/transport", responseType: Data.self)
+
+        // Then
+        switch result {
+        case .failure(let failure):
+            XCTAssertNil(failure.httpResponse)
+        default:
+            XCTFail("Expected transport failure")
+        }
+    }
+
+    func test_givenEncodingError_whenPost_thenHttpResponseIsNil() async {
+        // Given
+        struct Bad: Encodable {
+            func encode(to encoder: Encoder) throws {
+                throw NSError(domain: "encoding", code: 999)
+            }
+        }
+        let session = MockMercurySession(scenario: .error(NSError(domain: "any", code: 0)))
+        let client = makeClient(session: session)
+
+        // When
+        let result = await client.post(path: "/encoding", body: Bad(), responseType: Data.self)
+
+        // Then
+        switch result {
+        case .failure(let failure):
+            XCTAssertNil(failure.httpResponse)
+        default:
+            XCTFail("Expected encoding failure")
+        }
+    }
+
+    func test_givenDecodingError_whenGet_thenHttpResponseIsNil() async {
+        // Given
+        struct Model: Decodable { let id: Int }
+        let json = #"{"id":"wrongtype"}"#
+        let data = Data(json.utf8)
+        let response = HTTPURLResponse(url: URL(string: "https://host.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        // When
+        let result = await client.get(path: "/decoding", responseType: Model.self)
+
+        // Then
+        switch result {
+        case .failure(let failure):
+            XCTAssertNil(failure.httpResponse)
+        default:
+            XCTFail("Expected decoding failure")
+        }
+    }
+
+    func test_givenInvalidResponse_whenGet_thenHttpResponseIsNil() async {
+        // Given
+        let data = Data("invalid".utf8)
+        let response = URLResponse(url: URL(string: "https://host.com")!, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        // When
+        let result = await client.get(path: "/badresponse", responseType: Data.self)
+
+        // Then
+        switch result {
+        case .failure(let failure):
+            XCTAssertNil(failure.httpResponse)
+        default:
+            XCTFail("Expected invalidResponse failure")
+        }
+    }
 }
 

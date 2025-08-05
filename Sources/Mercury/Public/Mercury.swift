@@ -363,6 +363,7 @@ public struct Mercury: MercuryProtocol {
                     statusCode: httpResponse.statusCode,
                     data: data
                 ),
+                httpResponse: httpResponse,
                 requestString: signature
             )
         )

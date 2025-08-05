@@ -5,7 +5,6 @@
 //  Created by Josh Gallant on 04/08/2025.
 //
 
-
 import XCTest
 @testable import Mercury
 
@@ -33,6 +32,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(error.description, "Invalid URL")
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertNil(failure.httpResponse)
     }
 
     func test_givenServerErrorWithData_whenInit_thenDescriptionIncludesBody() {
@@ -42,15 +42,17 @@ final class MercuryFailureTests: XCTestCase {
         let expectedSignature = "457492c9cc57ad8c13f8d6b08f80cea7e89fc0f826f70add69fb1f10c16100b6"
         let data = "Oops".data(using: .utf8)
         let error: MercuryError = .server(statusCode: 500, data: data)
+        let response = HTTPURLResponse(url: URL(string: "https://host.com")!, statusCode: 500, httpVersion: nil, headerFields: nil)
 
         // When
-        let failure = MercuryFailure(error: error, requestString: requestString)
+        let failure = MercuryFailure(error: error, httpResponse: response, requestString: requestString)
 
         // Then
         XCTAssertEqual(error.description, "500 Internal Server Error: Oops")
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertEqual(failure.httpResponse, response)
     }
 
     func test_givenServerErrorWithoutData_whenInit_thenDescriptionOmitsBody() {
@@ -59,15 +61,17 @@ final class MercuryFailureTests: XCTestCase {
         // SHA256("POST:/login")
         let expectedSignature = "0fa1628f847f67036f3a1e0247e6bc4df0d1dfc3815e88326884537a8fb12dc1"
         let error: MercuryError = .server(statusCode: 401, data: nil)
+        let response = HTTPURLResponse(url: URL(string: "https://host.com")!, statusCode: 401, httpVersion: nil, headerFields: nil)
 
         // When
-        let failure = MercuryFailure(error: error, requestString: requestString)
+        let failure = MercuryFailure(error: error, httpResponse: response, requestString: requestString)
 
         // Then
         XCTAssertEqual(error.description, "401 Unauthorized")
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertEqual(failure.httpResponse, response)
     }
 
     func test_givenInvalidResponseError_whenInit_thenDescriptionIsCorrect() {
@@ -85,6 +89,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertNil(failure.httpResponse)
     }
 
     func test_givenTransportError_whenInit_thenDescriptionContainsUnderlyingError() {
@@ -104,6 +109,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertNil(failure.httpResponse)
     }
 
     func test_givenEncodingError_whenInit_thenDescriptionContainsUnderlyingError() {
@@ -123,6 +129,7 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertNil(failure.httpResponse)
     }
 
     func test_givenDecodingFailedError_whenInit_thenDescriptionIsAccurate() {
@@ -142,5 +149,6 @@ final class MercuryFailureTests: XCTestCase {
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertEqual(failure.requestSignature, expectedSignature)
         XCTAssertEqual(failure.description, error.description)
+        XCTAssertNil(failure.httpResponse)
     }
 }
