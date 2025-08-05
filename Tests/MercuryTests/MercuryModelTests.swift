@@ -28,6 +28,21 @@ final class MercuryModelTests: XCTestCase {
         XCTAssertEqual(success.requestString, requestString)
         XCTAssertFalse(success.requestSignature.isEmpty)
     }
+    
+    func test_givenEmptyRequestString_whenInitMercurySuccess_thenRequestSignatureIsEmpty() {
+        // Given
+        struct EmptyUser: Decodable, Equatable {}
+        let value = EmptyUser()
+        let url = URL(string: "https://example.com")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let requestString = ""
+
+        // When
+        let success = MercurySuccess(value: value, httpResponse: response, requestString: requestString)
+
+        // Then
+        XCTAssertEqual(success.requestSignature, "")
+    }
 
     func test_givenMercuryFailure_whenInit_thenPropertiesAreSet() {
         // Given

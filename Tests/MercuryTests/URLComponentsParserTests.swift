@@ -30,4 +30,19 @@ final class URLComponentsParserTests: XCTestCase {
             XCTAssertEqual(result.basePath, expected.basePath, "Failed for input: \(input)")
         }
     }
+    
+    func test_givenIPv6WithoutPort_whenParse_thenHostIsIPv6PortIsNil() {
+        // Given
+        let input = "http://[2001:db8::2]/foo"
+        
+        // When
+        let result = URLComponentsParser.parse(input)
+        
+        // Then
+        XCTAssertEqual(result.scheme, "http")
+        XCTAssertEqual(result.host, "[2001:db8::2]")
+        XCTAssertNil(result.port)
+        XCTAssertEqual(result.basePath, "/foo")
+    }
+
 }
