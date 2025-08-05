@@ -16,23 +16,21 @@
 
 </div>
 
+# Mercury
 
-Mercury is a lightweight and easy to use HTTP client for Swift that includes many quality of life features out of the box. Its designed to remove networking boilerplate so you can focusing on building your app.
+A easy to use type-aware HTTP networking library for Swift with built-in JSON encoding/decoding, comprehensive error handling, and powerful testing capabilities.
 
-## <br><br> Features
+## Features
 
-- 🚀 **Modern Swift**: Built with Swift 5.9+ and async/await
-- ⚡ **Cache Control**: Built-in URLRequest cache policy support
-- 📦 **Auto-Encoding**: Automatic JSON encoding of `Encodable` request bodies
-- 🎨 **Auto-Decoding**: Automatic JSON decoding to any `Decodable` response type
-- 🔧 **Flexible URLs**: Smart URL parsing and construction
-- 📝 **Request Signatures**: Unique signatures for caching and debugging
-- 🔄 **Result-Based**: Structured error handling with `Result<MercurySuccess, MercuryFailure>`
-- 🎯 **Protocol-Oriented**: Clean separation with `MercuryProtocol` for easy testing
-- 🧪 **Mock Support**: Comprehensive `MockMercury` provided for testing
+- 🧬 **Type-aware:** Automatic encoding of request bodies and decoding of responses
+- 🎯 **Result-based:** Clean error handling with Swift's Result type
+- 🔄 **Flexible:** Support for all HTTP methods (GET, POST, PUT, PATCH, DELETE)
+- ⚙️ **Configurable:** Custom headers, query parameters, caching policies, and more
+- 🧪 **Testable:** Built-in mock with stubbing for comprehensive testing
+  
+## Installation
 
-## <br><br> Installation
-Add Mercury to your project using Xcode or by adding it to your `Package.swift`:
+Add Mercury to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
@@ -40,95 +38,66 @@ dependencies: [
 ]
 ```
 
-## <br><br> Quick Start
+## Quick Start
 
-### Setup
+### 1. Create a Client
 
 ```swift
 import Mercury
 
-// Initialize with just a host
+// Basic client
 let client = Mercury(host: "https://api.example.com")
 
-// Or with custom configuration
+// Client with custom configuration
 let client = Mercury(
     host: "https://api.example.com",
     port: 8080,
     defaultHeaders: [
-        "Authorization": "Bearer \(token)",
-        "Accept": "application/json"
-    ]
-)
-```
-
-Mercury intelligently parses various host formats:
-
-```swift
-Mercury(host: "https://api.example.com")           // Standard URL
-Mercury(host: "api.example.com")                   // Defaults to HTTPS
-Mercury(host: "https://localhost:3000")             // Custom protocol and port
-Mercury(host: "https://api.example.com/api/v1")    // With base path
-Mercury(host: "https://api.example.com:8443/v2")   // Custom port + base path
-```
-
-Mercury supports all standard HTTP methods:
-
-```swift
-await client.get(path: "/users")
-await client.post(path: "/users", body: newUser)
-await client.put(path: "/users/123", body: updatedUser)
-await client.patch(path: "/users/123", body: partialUpdate)
-await client.delete(path: "/users/123")
-```
-
-Build complex URLs with query parameters and fragments:
-
-```swift
-await client.get(
-    path: "/users",
-    queryItems: [
-        "page": "2",
-        "limit": "20",
-        "sort": "name"
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer your-token"
     ],
-    fragment: "results"
+    defaultCachePolicy: .reloadIgnoringLocalCacheData
 )
-// Results in: /users?page=2&limit=20&sort=name#results
 ```
 
-### GET Example
+### 2. Make Requests
+
+#### GET Request
 
 ```swift
-struct User: Codable {
+struct User: Decodable {
     let id: Int
     let name: String
     let email: String
 }
 
-// GET request
 let result = await client.get(
     path: "/users/123",
     responseType: User.self
 )
 
 switch result {
-case .success(let success):
-    print("User: \(success.value.name)")
-    print("Status: \(success.httpResponse.statusCode)")
-    
-case .failure(let failure):
-    print("Error: \(failure)")
-    print("Error: \(failure.error)") // either work!
-    print("Request: \(failure.requestSignature)")
+case .success(let response):
+    print("User: \(response.value.name)")
+case .failure(let error):
+    print("Error: \(error)")
 }
 ```
 
-### POST with Body Example
+#### POST Request with Body
 
 ```swift
-struct CreateUserRequest: Codable {
+struct CreateUserRequest: Encodable {
     let name: String
     let email: String
+}
+
+struct CreateUserResponse: Decodable {
+    let id: Int
+    let name: String
+    let email: String
+    let createdAt: String
 }
 
 let newUser = CreateUserRequest(name: "John Doe", email: "john@example.com")
@@ -136,48 +105,190 @@ let newUser = CreateUserRequest(name: "John Doe", email: "john@example.com")
 let result = await client.post(
     path: "/users",
     body: newUser,
+    responseType: CreateUserResponse.self
+)
+
+switch result {
+case .success(let response):
+    print("Created user with ID: \(response.value.id)")
+case .failure(let error):
+    print("Failed to create user: \(error)")
+}
+```
+
+### 3. Working with Nested Types
+
+```swift
+struct UserProfile: Decodable {
+    let user: User
+    let preferences: UserPreferences
+    let addresses: [Address]
+}
+
+struct UserPreferences: Decodable {
+    let theme: String
+    let notifications: Bool
+    let language: String
+}
+
+struct Address: Decodable {
+    let id: Int
+    let street: String
+    let city: String
+    let country: String
+    let isDefault: Bool
+}
+
+let result = await client.get(
+    path: "/users/123/profile",
+    responseType: UserProfile.self
+)
+
+switch result {
+case .success(let response):
+    let profile = response.value
+    print("User: \(profile.user.name)")
+    print("Addresses: \(profile.addresses.count)")
+    print("Theme: \(profile.preferences.theme)")
+case .failure(let error):
+    print("Error loading profile: \(error)")
+}
+```
+
+### 4. Decoding Raw Data (Images, Files)
+
+```swift
+// For binary data like images
+let result = await client.get(
+    path: "/users/123/avatar",
+    responseType: Data.self
+)
+
+switch result {
+case .success(let response):
+    let imageData = response.value
+    let image = UIImage(data: imageData)
+    // Use the image...
+case .failure(let error):
+    print("Failed to load avatar: \(error)")
+}
+
+// For plain text responses
+let result = await client.get(
+    path: "/health",
+    responseType: String.self
+)
+
+switch result {
+case .success(let response):
+    print("Health status: \(response.value)")
+case .failure(let error):
+    print("Health check failed: \(error)")
+}
+```
+
+### 5. Per Request Overrides
+You can override or add aditional values at the time of request:
+```swift
+let result = await client.get(
+    path: "/users/123",
+    headers: [
+        "X-Custom-Header": "custom-value",
+        "Accept-Language": "en-US"
+    ],
+    query: [
+        "include": "profile,preferences",
+        "format": "detailed"
+    ],
+    cachePolicy: .reloadIgnoringLocalCacheData,
     responseType: User.self
 )
 ```
 
-### Overrides
-On a per request basis you can override the cache policy or headers.
-Mercury will override any values it finds, or adds them before making the request.
+## Response Types
+
+### MercurySuccess
+
+When a request succeeds, you receive a `MercurySuccess<T>` containing:
 
 ```swift
-let result = await client.get(
-    path: "/users",
-    headers: ["X-Custom-Header": "value"],
-    query: ["page": "1", "limit": "20"],
-    cachePolicy: .returnCacheDataElseLoad,
-    responseType: [User].self
-)
-```
+let result = await client.get(path: "/users/123", responseType: User.self)
 
-## <br> <br> Response Types
+switch result {
+case .success(let success):
+    let user = success.value                      // The decoded response
+    let httpResponse = success.httpResponse       // HTTP metadata
+    let requestString = success.requestString     // Canonical request string
+    let signature = success.requestSignature      // Unique request signature (SHA256)
 
-Mercury can decode responses to any `Decodable` type, or RAW data when needed:
-
-### JSON Objects
-```swift
-struct ApiResponse: Codable {
-    let data: [User]
-    let pagination: Pagination
+    print("Status Code: \(httpResponse.statusCode)")
+    print("Headers: \(httpResponse.allHeaderFields)")
+    print("Request String: \(requestString)")
+    print("Request Signature: \(signature)")
 }
-
-let result = await client.get(path: "/users", responseType: ApiResponse.self)
 ```
 
-### Raw Data
+### MercuryFailure
+
+When a request fails, you receive a `MercuryFailure` containing:
+
 ```swift
-let result = await client.get(path: "/image.png", responseType: Data.self)
+switch result {
+case .failure(let failure):
+    let error = failure.error                     // The specific error type
+    let requestString = failure.requestString     // Canonical request string
+    let signature = failure.requestSignature      // Unique request signature (SHA256)
+
+    print("Error: \(failure.description)")
+    print("Request String: \(requestString)")
+    print("Request Signature: \(signature)")
+}
 ```
 
-## <br><br> Error Handling
+### Request Signatures
 
-Mercury provides comprehensive error information through `MercuryFailure` out of the box.
+Every request generates a **canonical string** and a unique **signature** for debugging, caching, and logging:
 
-### Simple Error Logging
+```swift
+let result = await client.get(path: "/users/123", responseType: User.self)
+
+switch result {
+case .success(let response):
+    print("Request string: \(response.requestString)")
+    // Example: "GET|https://api.example.com/users/123|headers:accept:application/json"
+    
+    print("Request signature: \(response.requestSignature)")
+    // Example: "cf9926cb53728d1111a042f03eb64cba298bdd2df0e0909a9f39c3523cfe7271"
+    
+case .failure(let failure):
+    print("Failed request string: \(failure.requestString)")
+    print("Failed request signature: \(failure.requestSignature)")
+}
+```
+
+**The `requestString` includes:**
+
+* HTTP method (e.g., `GET`, `POST`)
+* Complete URL (with query and fragment, if present)
+* Canonicalized, sorted headers (e.g., `headers:accept:application/json&content-type:application/json`)
+
+**The `requestSignature` is:**
+
+* A SHA256 hex digest of the canonical request string
+* **Stable**: same request, same signature every time
+* **Collision-resistant**: suitable for cache keys, request tracking, etc.
+
+**Use these for:**
+
+* **Debugging**: Identify exactly which request succeeded or failed
+* **Caching**: Use the request signature as a cache key
+* **Logging**: Track unique request patterns
+* **Testing**: Verify that the exact request was made (or failed)
+
+## Error Handling
+
+### Simple Error Handling (Common Case)
+
 Did you forget to make something nullable? Mercury pinpoints exactly what went wrong:
 
 ```swift
@@ -193,161 +304,221 @@ case .success(let success):
 case .failure(let failure):
     // Simple, descriptive error message
     print("Request failed: \(failure)")
-    // Output: "Decoding failed in 'User' for key 'userName': keyNotFound..."
+    // Examples:
+    // "Decoding failed in 'User' for key 'userName': keyNotFound..."
+    // "401 Unauthorized: Invalid API token"
+    // "404 Not Found"
+    // "Transport error: The Internet connection appears to be offline"
 }
 ```
 
-### Complete Error Handling
-Mercury surfaces meaningful errors with actionable data.
+### Comprehensive Error Handling
+
+For production applications, handle all error types:
 
 ```swift
 switch result {
+case .success(let response):
+    handleUser(response.value)
+    
 case .failure(let failure):
     switch failure.error {
-    case .server(let statusCode, let data):
-        print("Server error \(statusCode)")
-        if let errorBody = data, let message = String(data: errorBody, encoding: .utf8) {
-            print("Server message: \(message)")
-        }
-        
-    case .decodingFailed(let namespace, let key, _):
-        print("Check your \(namespace) model - missing or wrong type for '\(key)'")
-        
-    case .transport(let error):
-        print("Network issue: \(error.localizedDescription)")
-        
     case .invalidURL:
-        print("URL construction failed - check your path and query parameters")
+        print("Invalid URL configuration")
         
-    case .encoding(let error):
-        print("Request body encoding failed: \(error)")
+    case .server:
+        // Mercury provides descriptive server error messages
+        print("Server error: \(failure)")
+        // Examples:
+        // "401 Unauthorized: Invalid API token"
+        // "404 Not Found"
+        // "422 Unprocessable Entity: Email already exists"
         
     case .invalidResponse:
-        print("Server returned unexpected response format")
+        print("Received invalid response from server")
+        
+    case .transport:
+        print("Network error: \(failure)")
+        
+    case .encoding:
+        print("Failed to encode request: \(failure)")
+        
+    case .decodingFailed:
+        print("Data format error: \(failure)")
     }
-    
-    print("Request: \(failure.requestSignature)")
 }
 ```
 
-## <br><br> Request Signatures
-Every request, whether Success or Failure, generates a unique SHA signature for caching and debugging:
+## Testing with MockMercury
 
-```swift
-switch result {
-case .success(let success):
-    print("Request signature: \(success.requestSignature)")
-case .failure(let failure):
-    print("Failed request: \(failure.requestSignature)")
-}
-```
+Mercury includes a powerful mock for comprehensive testing:
 
-## <br><br> Testing with MockMercury
-
-Mercury includes `MockMercury` for comprehensive testing support:
+### Basic Test Setup
 
 ```swift
 import XCTest
 @testable import Mercury
 
-final class UserRepositoryTests: XCTestCase {
+final class UserServiceTests: XCTestCase {
+    private var mockClient: MockMercury!
+    private var userService: UserService!
     
-    func test_givenValidUser_whenCreateUser_thenReturnsSuccess() async {
-        // Given
-        let mock = MockMercury()
-        let user = User(id: 1, name: "John", email: "john@example.com")
-        
-        mock.stubPost(
-            path: "/users",
-            response: user,
-            statusCode: 201
-        )
-        
-        let repository = UserRepository(client: mock)
-        
-        // When
-        let result = await repository.createUser(name: "John", email: "john@example.com")
-        
-        // Then
-        switch result {
-        case .success(let success):
-            XCTAssertEqual(success.value.name, "John")
-            XCTAssertEqual(success.httpResponse.statusCode, 201)
-        case .failure:
-            XCTFail("Expected success")
-        }
-        
-        // Verify the call was made
-        XCTAssertTrue(mock.wasCalled(method: .POST, path: "/users"))
-        XCTAssertEqual(mock.callCount, 1)
+    override func setUp() {
+        super.setUp()
+        mockClient = MockMercury()
+        userService = UserService(client: mockClient)
     }
     
-    func test_givenServerError_whenCreateUser_thenReturnsFailure() async {
-        // Given
-        let mock = MockMercury()
-        
-        mock.stubFailure(
-            method: .POST,
-            path: "/users",
-            error: .server(statusCode: 500, data: nil),
-            responseType: User.self
-        )
-        
-        let repository = UserRepository(client: mock)
-        
-        // When
-        let result = await repository.createUser(name: "John", email: "john@example.com")
-        
-        // Then
-        switch result {
-        case .success:
-            XCTFail("Expected failure")
-        case .failure(let failure):
-            if case .server(let statusCode, _) = failure.error {
-                XCTAssertEqual(statusCode, 500)
-            } else {
-                XCTFail("Expected server error")
-            }
+    override func tearDown() {
+        mockClient = nil
+        userService = nil
+        super.tearDown()
+    }
+}
+
+class UserService {
+    private let client: MercuryProtocol
+    
+    init(client: MercuryProtocol) {
+        self.client = client
+    }
+    
+    func fetchUser(id: Int) async -> Result<User, MercuryFailure> {
+        await client.get(path: "/users/\(id)", responseType: User.self)
+    }
+}
+```
+
+### Stubbing Successful Responses
+
+```swift
+func test_givenValidUserId_whenFetchUser_thenReturnsUser() async {
+    // Given
+    let expectedUser = User(id: 123, name: "John Doe", email: "john@example.com")
+    mockClient.stubGet(path: "/users/123", response: expectedUser)
+    
+    // When
+    let result = await userService.fetchUser(id: 123)
+    
+    // Then
+    switch result {
+    case .success(let response):
+        XCTAssertEqual(response.value.id, 123)
+        XCTAssertEqual(response.value.name, "John Doe")
+    case .failure:
+        XCTFail("Expected success")
+    }
+}
+```
+
+### Stubbing Failures
+
+```swift
+func test_givenServerError_whenFetchUser_thenReturnsFailure() async {
+    // Given
+    mockClient.stubFailure(
+        method: .GET,
+        path: "/users/123",
+        error: .server(statusCode: 404, data: nil),
+        responseType: User.self
+    )
+    
+    // When
+    let result = await userService.fetchUser(id: 123)
+    
+    // Then
+    switch result {
+    case .success:
+        XCTFail("Expected failure")
+    case .failure(let failure):
+        if case .server(let statusCode, _) = failure.error {
+            XCTAssertEqual(statusCode, 404)
+        } else {
+            XCTFail("Expected server error")
         }
     }
 }
 ```
 
-### Mock Capabilities
-
-- ✅ **Method-Specific Stubbing**: Different responses for GET, POST, PUT, PATCH, DELETE
-- ✅ **Call Recording**: Inspect all calls made including parameters
-- ✅ **Flexible Responses**: Stub successes, failures, and custom delays
-- ✅ **Query Verification**: Check specific method/path combinations were called
-- ✅ **Parameter Inspection**: Verify headers, query parameters, and request bodies
-
-### Mock Methods
+### Verifying Calls
 
 ```swift
-let mock = MockMercury()
-
-// Stub successful responses
-mock.stubGet(path: "/users", response: users)
-mock.stubPost(path: "/users", response: newUser, statusCode: 201)
-
-// Stub failures
-mock.stubFailure(method: .GET, path: "/users", error: .invalidURL, responseType: [User].self)
-
-// Add delays for testing loading states
-mock.stubGet(path: "/slow-endpoint", response: data, delay: 2.0)
-
-// Reset for clean test state
-mock.reset() // Clear both stubs and recorded calls
-mock.clearStubs() // Clear only stubs
-mock.clearRecordedCalls() // Clear only recorded calls
-
-// Query recorded calls
-print("Total calls: \(mock.callCount)")
-print("GET /users called: \(mock.wasCalled(method: .GET, path: "/users"))")
-print("Last call: \(mock.lastCall)")
+func test_givenUserId_whenFetchUser_thenMakesCorrectRequest() async {
+    // Given
+    let user = User(id: 123, name: "John Doe", email: "john@example.com")
+    mockClient.stubGet(path: "/users/123", response: user)
+    
+    // When
+    _ = await userService.fetchUser(id: 123)
+    
+    // Then
+    XCTAssertEqual(mockClient.callCount, 1)
+    XCTAssertTrue(mockClient.wasCalled(method: .GET, path: "/users/123"))
+    
+    let lastCall = mockClient.lastCall
+    XCTAssertEqual(lastCall?.method, .GET)
+    XCTAssertEqual(lastCall?.path, "/users/123")
+    XCTAssertFalse(lastCall?.hasBody ?? true)
+}
 ```
 
-## <br><br> License
+### Testing with Delays
+
+```swift
+func test_givenSlowNetwork_whenFetchUser_thenHandlesDelay() async {
+    // Given
+    let user = User(id: 123, name: "John Doe", email: "john@example.com")
+    mockClient.stubGet(path: "/users/123", response: user, delay: 2.0)
+    
+    let startTime = Date()
+    
+    // When
+    _ = await userService.fetchUser(id: 123)
+    
+    // Then
+    let elapsed = Date().timeIntervalSince(startTime)
+    XCTAssertGreaterThanOrEqual(elapsed, 2.0)
+}
+```
+
+### Testing POST Requests
+
+```swift
+func test_givenUserData_whenCreateUser_thenMakesCorrectRequest() async {
+    // Given
+    let newUser = CreateUserRequest(name: "Jane Doe", email: "jane@example.com")
+    let createdUser = CreateUserResponse(id: 456, name: "Jane Doe", email: "jane@example.com", createdAt: "2023-01-01")
+    mockClient.stubPost(path: "/users", response: createdUser, statusCode: 201)
+    
+    // When
+    _ = await userService.createUser(newUser)
+    
+    // Then
+    XCTAssertTrue(mockClient.wasCalled(method: .POST, path: "/users"))
+    
+    let lastCall = mockClient.lastCall
+    XCTAssertTrue(lastCall?.hasBody ?? false)
+}
+```
+
+### Mock Management
+
+```swift
+func test_mockCleanup() {
+    // Setup multiple stubs
+    mockClient.stubGet(path: "/users/1", response: User(id: 1, name: "User 1", email: "user1@example.com"))
+    mockClient.stubGet(path: "/users/2", response: User(id: 2, name: "User 2", email: "user2@example.com"))
+    
+    // Clear specific data
+    mockClient.clearRecordedCalls()  // Keeps stubs, clears call history
+    mockClient.clearStubs()          // Keeps calls, clears stubs
+    mockClient.reset()               // Clears everything
+    
+    XCTAssertEqual(mockClient.callCount, 0)
+}
+```
+
+## License
 
 Mercury is available under the MIT License. See the [LICENSE](./LICENSE) file for more details.
 
