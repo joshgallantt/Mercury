@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Enumerates all error cases Mercury can produce, including transport and decoding issues.
 public enum MercuryError: Error, CustomStringConvertible {
     /// The constructed URL was invalid.
     case invalidURL

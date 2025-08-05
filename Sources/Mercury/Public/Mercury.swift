@@ -338,18 +338,24 @@ public struct Mercury: MercuryProtocol {
         responseType: Response.Type,
         signature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
-        guard (200...299).contains(httpResponse.statusCode) else {
-            return .failure(MercuryFailure(
-                error: .server(statusCode: httpResponse.statusCode, data: data),
-                requestSignature: signature
-            ))
-        }
         
-        return decodeResponse(
-            data: data,
-            httpResponse: httpResponse,
-            responseType: responseType,
-            signature: signature
+        if (200...299).contains(httpResponse.statusCode) {
+            return decodeResponse(
+                data: data,
+                httpResponse: httpResponse,
+                responseType: responseType,
+                signature: signature
+            )
+        }
+
+        return .failure(
+            MercuryFailure(
+                error: .server(
+                    statusCode: httpResponse.statusCode,
+                    data: data
+                ),
+                requestSignature: signature
+            )
         )
     }
     
