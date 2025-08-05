@@ -8,6 +8,7 @@
 
 import XCTest
 @testable import Mercury
+@testable import MercuryTesting
 
 final class MercuryProtocolExtensionTests: XCTestCase {
 

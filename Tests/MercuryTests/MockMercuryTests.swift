@@ -8,6 +8,7 @@
 
 import XCTest
 @testable import Mercury
+@testable import MercuryTesting
 
 final class MockMercuryTests: XCTestCase {
     
@@ -20,7 +21,7 @@ final class MockMercuryTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        mockMercury = Mercury.mock()
+        mockMercury = MockMercury()
     }
     
     override func tearDown() {

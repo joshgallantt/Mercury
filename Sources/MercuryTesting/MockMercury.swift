@@ -2,13 +2,16 @@
 //  MockMercury.swift
 //  Mercury
 //
-//  Created by Josh Gallant on 04/08/2025.
+//  Created by Josh Gallant on 05/08/2025.
 //
 
+
+
 import Foundation
+import Mercury
 
 /// A mock implementation of `MercuryProtocol` designed for testing.
-/// Provides comprehensive stubbing capabilities and call recording.
+/// Provides stubbing capabilities and call recording.
 public final class MockMercury: MercuryProtocol, @unchecked Sendable {
     
     // MARK: - Types
@@ -134,23 +137,7 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
             _recordedCalls.removeAll()
         }
     }
-    
-    /// Removes all recorded calls while preserving stubs
-    public func clearRecordedCalls() {
-        lock.withLock {
-            _recordedCalls.removeAll()
-        }
-    }
-    
-    /// Removes all stubs while preserving recorded calls
-    public func clearStubs() {
-        lock.withLock {
-            _stubs.removeAll()
-        }
-    }
-    
-    // MARK: - Query Methods
-    
+        
     /// Returns the number of calls made to a specific method and path
     public func callCount(for method: MercuryMethod, path: String) -> Int {
         recordedCalls.count { $0.method == method && $0.path == path }
@@ -159,16 +146,6 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
     /// Checks if a specific method and path combination was called
     public func wasCalled(method: MercuryMethod, path: String) -> Bool {
         callCount(for: method, path: path) > 0
-    }
-    
-    /// Returns the last recorded call, if any
-    public var lastCall: RecordedCall? {
-        recordedCalls.last
-    }
-    
-    /// Returns the first recorded call, if any
-    public var firstCall: RecordedCall? {
-        recordedCalls.first
     }
     
     // MARK: - MercuryProtocol Implementation
@@ -390,16 +367,5 @@ extension MockMercury {
         delay: TimeInterval = 0
     ) {
         stub(method: .DELETE, path: path, response: response, statusCode: statusCode, headers: headers, delay: delay)
-    }
-}
-
-// MARK: - Mercury Extension
-
-extension Mercury {
-    
-    /// Creates a mock Mercury instance for testing
-    /// - Returns: A configured MockMercury instance
-    public static func mock() -> MockMercury {
-        MockMercury()
     }
 }
