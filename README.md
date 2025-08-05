@@ -24,14 +24,7 @@ A easy to use type-aware HTTP networking library for Swift with built-in JSON en
 
 - 🧬 **Type-aware:** Automatic encoding of request bodies and decoding of responses
 - 🎯 **Result-based:** Clean error handling with Swift's Result type
-- 🔄 **Flexible:** Support for all HTTP methods (GET, POST, PUT, PATCH, DELETE)
-- ⚙️ **Configurable:** Custom headers, query parameters, caching policies, and more
-- 🧪 **Testable:** Built-in mock with stubbing for comprehensive testing
-  
-## Features
-
-- 🧬 **Type-aware:** Automatic encoding of request bodies and decoding of responses
-- 🎯 **Result-based:** Clean error handling with Swift's Result type
+- 📦 **Cache:** URLCache support ready to go
 - 🔄 **Flexible:** Support for all HTTP methods (GET, POST, PUT, PATCH, DELETE)
 - ⚙️ **Configurable:** Custom headers, query parameters, caching policies, and more
 - 🧪 **Testable:** Built-in mock with stubbing for comprehensive testing
@@ -42,7 +35,7 @@ Add Mercury to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/Mercury.git", from: "1.0.0")
+    .package(url: "https://github.com/joshgallantt/Mercury.git", from: "2.0.0")
 ]
 ```
 
