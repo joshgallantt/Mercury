@@ -166,6 +166,7 @@ final class MercuryTests: XCTestCase {
         case .failure(let failure):
             switch failure.error {
             case .invalidURL:
+                XCTAssertEqual(failure.requestString, "")
                 XCTAssertEqual(failure.requestSignature, "")
             default:
                 XCTFail("Expected .invalidURL failure")
@@ -804,6 +805,59 @@ final class MercuryTests: XCTestCase {
         default: XCTFail("Expected success")
         }
         XCTAssertNotEqual(s1, s2, "Request string should differ for different URLs")
+    }
+    
+    func test_givenRequestWithFragment_thenRequestStringIncludesFragment() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        
+        // When
+        let result = await client.get(
+            path: "/resource",
+            fragment: "section-2",
+            responseType: Data.self
+        )
+        
+        // Then
+        switch result {
+        case .success(let success):
+            XCTAssertTrue(success.requestString.contains("#section-2"), "Request string should contain the fragment")
+            XCTAssertTrue(success.requestString.contains("https://host.com/resource#section-2"))
+        default:
+            XCTFail("Expected success")
+        }
+    }
+
+    func test_givenRequestsWithAndWithoutFragment_thenSignaturesAreDifferent() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        // When
+        let result1 = await client.get(
+            path: "/resource",
+            responseType: Data.self
+        )
+        let result2 = await client.get(
+            path: "/resource",
+            fragment: "frag",
+            responseType: Data.self
+        )
+
+        // Then
+        var sig1 = "", sig2 = ""
+        switch result1 {
+        case .success(let success): sig1 = success.requestSignature
+        default: XCTFail("Expected success")
+        }
+        switch result2 {
+        case .success(let success): sig2 = success.requestSignature
+        default: XCTFail("Expected success")
+        }
+        XCTAssertNotEqual(sig1, sig2, "Signature should differ when fragment changes")
     }
 
 }

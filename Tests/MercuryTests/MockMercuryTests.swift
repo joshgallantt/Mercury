@@ -363,7 +363,7 @@ final class MockMercuryTests: XCTestCase {
         
         let _ = MercuryFailure(
             error: .server(statusCode: 404, data: nil),
-            requestSignature: "GET /users/999"
+            requestString: "GET /users/999"
         )
         
         mockMercury.stubFailure(

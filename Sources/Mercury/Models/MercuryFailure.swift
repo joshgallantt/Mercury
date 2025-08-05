@@ -6,18 +6,30 @@
 //
 
 import Foundation
+import CryptoKit
 
 /// Represents a failed HTTP request, including a machine-readable error and the request signature.
 public struct MercuryFailure: Error, CustomStringConvertible {
     /// The specific failure reason.
     public let error: MercuryError
 
-    /// The signature of the request that failed.
-    public let requestSignature: String
+    /// A  string representing the request that failed.
+    public let requestString: String
 
-    public init(error: MercuryError, requestSignature: String) {
+    /// A unique signature representing the request (useful for caching, debugging, etc).
+    public var requestSignature: String {
+        guard !requestString.isEmpty else {
+            return ""
+        }
+        
+        let data = Data(requestString.utf8)
+        let hash = SHA256.hash(data: data)
+        return hash.map { String(format: "%02x", $0) }.joined()
+    }
+
+    public init(error: MercuryError, requestString: String) {
         self.error = error
-        self.requestSignature = requestSignature
+        self.requestString = requestString
     }
 
     /// A textual description of the failure, delegating to the underlying `MercuryError`.

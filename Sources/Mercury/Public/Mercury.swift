@@ -187,12 +187,12 @@ public struct Mercury: MercuryProtocol {
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         // Step 1: Validate host
         guard !host.isEmpty else {
-            return .failure(MercuryFailure(error: .invalidURL, requestSignature: ""))
+            return .failure(MercuryFailure(error: .invalidURL, requestString: ""))
         }
         
         // Step 2: Build URL
         guard let url = buildURL(path: path, query: query, fragment: fragment) else {
-            return .failure(MercuryFailure(error: .invalidURL, requestSignature: ""))
+            return .failure(MercuryFailure(error: .invalidURL, requestString: ""))
         }
         
         // Step 3: Encode body only if present
@@ -202,7 +202,7 @@ public struct Mercury: MercuryProtocol {
             case .success(let data):
                 bodyData = data
             case .failure(let error):
-                return .failure(MercuryFailure(error: error, requestSignature: ""))
+                return .failure(MercuryFailure(error: error, requestString: ""))
             }
         }
         
@@ -329,7 +329,7 @@ public struct Mercury: MercuryProtocol {
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         switch networkResult {
         case .failure(let error):
-            return .failure(MercuryFailure(error: error, requestSignature: signature))
+            return .failure(MercuryFailure(error: error, requestString: signature))
             
         case .success(let (data, httpResponse)):
             return processResponse(
@@ -363,7 +363,7 @@ public struct Mercury: MercuryProtocol {
                     statusCode: httpResponse.statusCode,
                     data: data
                 ),
-                requestSignature: signature
+                requestString: signature
             )
         )
     }
@@ -411,7 +411,7 @@ public struct Mercury: MercuryProtocol {
                         key: keyPath,
                         underlyingError: error
                     ),
-                    requestSignature: signature
+                    requestString: signature
                 )
             )
         }

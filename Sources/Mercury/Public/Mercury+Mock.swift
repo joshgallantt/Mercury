@@ -117,7 +117,7 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
     ) {
         let failure = MercuryFailure(
             error: error,
-            requestSignature: "\(method.rawValue) \(path)"
+            requestString: "\(method.rawValue) \(path)"
         )
         let stubbedResponse = StubbedResponse<T>(result: .failure(failure), delay: delay)
         let key = stubKey(method: method, path: path)
@@ -322,7 +322,7 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         // Default behavior: return a failure indicating no stub was configured
         let failure = MercuryFailure(
             error: .invalidURL,
-            requestSignature: "\(method.rawValue) \(path)"
+            requestString: "\(method.rawValue) \(path)"
         )
         
         return .failure(failure)
