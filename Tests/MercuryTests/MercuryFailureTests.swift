@@ -131,7 +131,7 @@ final class MercuryFailureTests: XCTestCase {
         // SHA256("GET:/users/1")
         let expectedSignature = "4c07db0fc628c9b2482f042803dc5b00212e4f183682587b19b4d81f6bfce768"
         let underlying = DummyError(message: "Missing key 'id'")
-        let error: MercuryError = .decodingFailed(namespace: "User", key: "id", underlyingError: underlying)
+        let error: MercuryError = .decoding(namespace: "User", key: "id", underlyingError: underlying)
 
         // When
         let failure = MercuryFailure(error: error, requestString: requestString)

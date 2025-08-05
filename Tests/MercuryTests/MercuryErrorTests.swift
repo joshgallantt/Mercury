@@ -121,10 +121,10 @@ final class MercuryErrorTests: XCTestCase {
         XCTAssertEqual(description, "Encoding error: Mock error description")
     }
 
-    // MARK: - decodingFailed
+    // MARK: - decoding
     func test_givenDecodingFailed_whenDescription_thenReturnsExpectedString() {
         // Given
-        let error = MercuryError.decodingFailed(namespace: "User", key: "name", underlyingError: MockError())
+        let error = MercuryError.decoding(namespace: "User", key: "name", underlyingError: MockError())
 
         // When
         let description = error.description

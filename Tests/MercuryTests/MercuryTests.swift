@@ -369,7 +369,7 @@ final class MercuryTests: XCTestCase {
         switch result {
         case .failure(let failure):
             switch failure.error {
-            case .decodingFailed(let namespace, let key, let underlying):
+            case .decoding(let namespace, let key, let underlying):
                 XCTAssertEqual(namespace, "Person")
                 XCTAssertEqual(key, "age") // The keyPath should be "age" for keyNotFound
                 XCTAssertTrue("\(underlying)".contains("keyNotFound"))
@@ -400,7 +400,7 @@ final class MercuryTests: XCTestCase {
         switch result {
         case .failure(let failure):
             switch failure.error {
-            case .decodingFailed(_, let key, let underlying):
+            case .decoding(_, let key, let underlying):
                 XCTAssertEqual(key, "id")
                 XCTAssertTrue("\(underlying)".contains("typeMismatch"))
             default:
@@ -431,7 +431,7 @@ final class MercuryTests: XCTestCase {
         switch result {
         case .failure(let failure):
             switch failure.error {
-            case .decodingFailed(_, let key, let underlying):
+            case .decoding(_, let key, let underlying):
                 XCTAssertEqual(key, "id")
                 XCTAssertTrue("\(underlying)".contains("valueNotFound"))
             default:
@@ -460,7 +460,7 @@ final class MercuryTests: XCTestCase {
         switch result {
         case .failure(let failure):
             switch failure.error {
-            case .decodingFailed(_, let key, let underlying):
+            case .decoding(_, let key, let underlying):
                 XCTAssertEqual(key, "id")
                 if let decodingError = underlying as? DecodingError {
                     switch decodingError {

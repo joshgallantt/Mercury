@@ -11,7 +11,7 @@
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
-[![Coverage](https://img.shields.io/badge/Coverage-98.2%25-brightgreen.svg?style=flat)](#)
+[![Coverage](https://img.shields.io/badge/Coverage-98%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
@@ -247,7 +247,7 @@ case .failure(let failure):
 
 ### Request Signatures
 
-Every request generates a **canonical string** and a unique **signature** for debugging, caching, and logging:
+Every request generates a deterministic **canonical string** and a unique **signature** for debugging, caching, and logging:
 
 ```swift
 let result = await client.get(path: "/users/123", responseType: User.self)
@@ -270,7 +270,7 @@ case .failure(let failure):
 
 * HTTP method (e.g., `GET`, `POST`)
 * Complete URL (with query and fragment, if present)
-* Canonicalized, sorted headers (e.g., `headers:accept:application/json&content-type:application/json`)
+* Canonicalized, (sorted) headers.
 
 **The `requestSignature` is:**
 
@@ -314,8 +314,6 @@ case .failure(let failure):
 
 ### Comprehensive Error Handling
 
-For production applications, handle all error types:
-
 ```swift
 switch result {
 case .success(let response):
@@ -343,7 +341,7 @@ case .failure(let failure):
     case .encoding:
         print("Failed to encode request: \(failure)")
         
-    case .decodingFailed:
+    case .decoding:
         print("Data format error: \(failure)")
     }
 }

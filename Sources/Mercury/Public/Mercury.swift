@@ -216,7 +216,7 @@ public struct Mercury: MercuryProtocol {
         )
         
         // Step 5: Generate signature
-        let signature = generateSignature(for: request)
+        let requestString = generateCanonicalRequestString(for: request)
         
         // Step 6: Execute request
         let networkResult = await executeRequest(request)
@@ -225,7 +225,7 @@ public struct Mercury: MercuryProtocol {
         return result(
             networkResult: networkResult,
             responseType: responseType,
-            signature: signature
+            requestString: requestString
         )
     }
     
@@ -325,18 +325,18 @@ public struct Mercury: MercuryProtocol {
     private func result<Response: Decodable>(
         networkResult: Result<(Data, HTTPURLResponse), MercuryError>,
         responseType: Response.Type,
-        signature: String
+        requestString: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         switch networkResult {
         case .failure(let error):
-            return .failure(MercuryFailure(error: error, requestString: signature))
+            return .failure(MercuryFailure(error: error, requestString: requestString))
             
         case .success(let (data, httpResponse)):
             return processResponse(
                 data: data,
                 httpResponse: httpResponse,
                 responseType: responseType,
-                signature: signature
+                signature: requestString
             )
         }
     }
@@ -406,7 +406,7 @@ public struct Mercury: MercuryProtocol {
             let keyPath = extractKeyPath(from: error, for: responseType)
             return .failure(
                 MercuryFailure(
-                    error: .decodingFailed(
+                    error: .decoding(
                         namespace: String(describing: responseType),
                         key: keyPath,
                         underlyingError: error
@@ -441,7 +441,7 @@ public struct Mercury: MercuryProtocol {
         path.map { $0.stringValue }.joined(separator: ".")
     }
     
-    private func generateSignature(for request: URLRequest) -> String {
+    private func generateCanonicalRequestString(for request: URLRequest) -> String {
         var components: [String] = []
         
         // Add method
@@ -458,12 +458,6 @@ public struct Mercury: MercuryProtocol {
         }
         
         return components.joined(separator: "|")
-    }
-    
-    private func hashData(_ data: Data) -> String {
-        SHA256.hash(data: data)
-            .map { String(format: "%02x", $0) }
-            .joined()
     }
     
     private func canonicalizeHeaders(_ headers: [String: String]) -> String {

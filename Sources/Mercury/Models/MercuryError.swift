@@ -24,7 +24,7 @@ public enum MercuryError: Error, CustomStringConvertible {
     case encoding(Error)
 
     /// The response body could not be decoded into the expected type.
-    case decodingFailed(namespace: String, key: String, underlyingError: Error)
+    case decoding(namespace: String, key: String, underlyingError: Error)
 
     public var description: String {
         switch self {
@@ -63,7 +63,7 @@ public enum MercuryError: Error, CustomStringConvertible {
         case .encoding(let error):
             return "Encoding error: \(error.localizedDescription)"
 
-        case let .decodingFailed(namespace, key, underlyingError):
+        case let .decoding(namespace, key, underlyingError):
             return "Decoding failed in '\(namespace)' for key '\(key)': \(underlyingError.localizedDescription)"
         }
     }
