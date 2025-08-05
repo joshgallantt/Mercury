@@ -16,8 +16,12 @@ public struct Mercury: MercuryProtocol {
     private let port: Int?
     private let basePath: String
     private let defaultHeaders: [String: String]
-    private let defaultCachePolicy: URLRequest.CachePolicy
     private let session: MercurySession
+    
+    // Cache
+    private let cacheOption: MercuryCacheOption
+    private let urlCache: URLCache?
+    private let defaultCachePolicy: URLRequest.CachePolicy
     
     // MARK: - Initialization
     
@@ -28,24 +32,40 @@ public struct Mercury: MercuryProtocol {
             "Accept": "application/json",
             "Content-Type": "application/json"
         ],
-        defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        cacheOption: MercuryCacheOption = .shared
     ) {
         let components = URLComponentsParser.parse(host)
-        
         self.scheme = components.scheme
         self.host = components.host
         self.port = port ?? components.port
         self.basePath = components.basePath
         self.defaultHeaders = defaultHeaders
         self.defaultCachePolicy = defaultCachePolicy
-        
-        let sessionConfiguration = URLSessionConfiguration.default
-        sessionConfiguration.urlCache = .shared
-        sessionConfiguration.requestCachePolicy = defaultCachePolicy
-        
-        self.session = URLSession(configuration: sessionConfiguration)
+        self.cacheOption = cacheOption
+
+        let (resolvedCache, resolvedSession): (URLCache?, URLSession)
+        switch cacheOption {
+        case .shared:
+            resolvedCache = nil
+            let config = URLSessionConfiguration.default
+            config.urlCache = .shared
+            config.requestCachePolicy = defaultCachePolicy
+            resolvedSession = URLSession(configuration: config)
+        case .clientIsolated(let memory, let disk):
+            let cache = URLCache(memoryCapacity: memory, diskCapacity: disk)
+            resolvedCache = cache
+            let config = URLSessionConfiguration.default
+            config.urlCache = cache
+            config.requestCachePolicy = defaultCachePolicy
+            resolvedSession = URLSession(configuration: config)
+        }
+
+        self.urlCache = resolvedCache
+        self.session = resolvedSession
     }
-    
+
+    // Internal for injection/testing
     internal init(
         host: String,
         port: Int? = nil,
@@ -54,20 +74,39 @@ public struct Mercury: MercuryProtocol {
             "Accept": "application/json",
             "Content-Type": "application/json"
         ],
-        defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        cacheOption: MercuryCacheOption = .shared,
+        urlCache: URLCache? = nil
     ) {
         let components = URLComponentsParser.parse(host)
-        
         self.scheme = components.scheme
         self.host = components.host
         self.port = port ?? components.port
         self.basePath = components.basePath
         self.defaultHeaders = defaultHeaders
         self.defaultCachePolicy = defaultCachePolicy
+        self.cacheOption = cacheOption
+        self.urlCache = urlCache
         self.session = session
     }
+
     
     // MARK: - Public API
+    
+    /// Clears all cached responses from `URLCache.shared`.
+    ///
+    /// - Warning: This will remove **all** cached URL responses from the global shared cache,
+    ///   including those created outside of Mercury. This may impact other networking clients,
+    ///   libraries, or system requests that rely on the shared cache. Use with caution!
+    static func clearAllSharedCache() {
+        URLCache.shared.removeAllCachedResponses()
+    }
+
+    
+    /// Clears the cache used by this Mercury client, if using `.clientIsolated`.
+    public func clearCache() {
+        urlCache?.removeAllCachedResponses()
+    }
     
     public func get<Response: Decodable>(
         path: String,
@@ -175,6 +214,19 @@ public struct Mercury: MercuryProtocol {
     
     // MARK: - Private Implementation
     
+    func encodeBody<Body: Encodable>(_ body: Body?) -> Result<Data?, MercuryError> {
+        guard let body = body else {
+            return .success(nil)
+        }
+        
+        do {
+            let data = try JSONEncoder().encode(body)
+            return .success(data)
+        } catch {
+            return .failure(.encoding(error))
+        }
+    }
+    
     private func performRequest<Body: Encodable, Response: Decodable>(
         method: MercuryMethod,
         path: String,
@@ -241,7 +293,7 @@ public struct Mercury: MercuryProtocol {
         return components.url
     }
     
-    private func buildFullPath(_ path: String) -> String {
+    internal func buildFullPath(_ path: String) -> String {
         let cleanBasePath = basePath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let cleanPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         
@@ -251,7 +303,7 @@ public struct Mercury: MercuryProtocol {
         return fullPath.replacingOccurrences(of: "/+", with: "/", options: NSString.CompareOptions.regularExpression)
     }
     
-    private func buildQueryItems(from query: [String: String]?) -> [URLQueryItem]? {
+    internal func buildQueryItems(from query: [String: String]?) -> [URLQueryItem]? {
         guard let query = query, !query.isEmpty else { return nil }
         return query.map { URLQueryItem(name: $0.key, value: $0.value) }
     }
@@ -295,18 +347,6 @@ public struct Mercury: MercuryProtocol {
         return Dictionary(uniqueKeysWithValues: merged.values.map { ($0.originalKey, $0.value) })
     }
 
-    private func encodeBody<Body: Encodable>(_ body: Body?) -> Result<Data?, MercuryError> {
-        guard let body = body else {
-            return .success(nil)
-        }
-        
-        do {
-            let data = try JSONEncoder().encode(body)
-            return .success(data)
-        } catch {
-            return .failure(.encoding(error))
-        }
-    }
     
     private func executeRequest(_ request: URLRequest) async -> Result<(Data, HTTPURLResponse), MercuryError> {
         do {
@@ -442,7 +482,7 @@ public struct Mercury: MercuryProtocol {
         path.map { $0.stringValue }.joined(separator: ".")
     }
     
-    private func generateCanonicalRequestString(for request: URLRequest) -> String {
+    internal func generateCanonicalRequestString(for request: URLRequest) -> String {
         var components: [String] = []
         
         // Add method

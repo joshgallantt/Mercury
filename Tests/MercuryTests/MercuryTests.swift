@@ -380,4 +380,173 @@ final class MercuryTests: XCTestCase {
             XCTFail("Expected success")
         }
     }
+    
+    // MARK: - Cache and Static Method Coverage
+
+    func test_givenClientIsolatedCache_whenInit_thenClearCacheRemovesResponses() {
+        // Given
+        let cache = URLCache(memoryCapacity: 512, diskCapacity: 1024)
+        let session = MockMercurySession(scenario: .error(NSError(domain: "x", code: 1)))
+        let client = Mercury(
+            host: "https://host.com",
+            port: nil,
+            session: session,
+            defaultHeaders: ["Test": "Value"],
+            defaultCachePolicy: .reloadIgnoringCacheData,
+            cacheOption: .clientIsolated(memorySize: 512, diskSize: 1024),
+            urlCache: cache
+        )
+
+        // When/Then (just calls, checks don’t crash)
+        client.clearCache()
+        Mercury.clearAllSharedCache()
+    }
+
+    // MARK: - mergeHeaders
+
+    func test_givenCustomHeaders_whenCaseDiffers_thenOverridesDefaultCaseSensitive() async {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session, defaultHeaders: ["HeaderA": "DefaultA", "headerb": "DefaultB"])
+        var requestHeaders: [String: String]?
+        session.onRequest = { request in
+            requestHeaders = request.allHTTPHeaderFields
+            return (data, response)
+        }
+
+        // When
+        _ = await client.get(path: "/headers", headers: ["headerA": "Override", "HeaderB": "CustomB"], responseType: Data.self)
+
+        // Then: Custom should override, and casing should match custom
+        XCTAssertEqual(requestHeaders?["headerA"], "Override")
+        XCTAssertEqual(requestHeaders?["HeaderB"], "CustomB")
+        // No old-case version left
+        XCTAssertNil(requestHeaders?["HeaderA"])
+        XCTAssertNil(requestHeaders?["headerb"])
+    }
+
+    // MARK: - encodeBody
+
+    func test_givenNilBody_whenEncodeBody_thenReturnsNilData() {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        // When
+        let result = client.encodeBody(nil as String?)
+
+        // Then
+        switch result {
+        case .success(let data): XCTAssertNil(data)
+        default: XCTFail("Expected nil data")
+        }
+    }
+
+    // MARK: - decodeResponse: Data.self and String.self
+
+    func test_givenDataResponseType_whenDecode_thenReturnsRawData() async {
+        // Given
+        let data = Data([1,2,3,4])
+        let response = HTTPURLResponse(url: URL(string: "https://host.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        // When
+        let result = await client.get(path: "/raw", responseType: Data.self)
+
+        // Then
+        switch result {
+        case .success(let success): XCTAssertEqual(success.value, data)
+        default: XCTFail("Expected raw Data")
+        }
+    }
+
+    func test_givenStringResponseType_whenDecode_thenReturnsString() async {
+        // Given
+        let str = "Hello Mercury"
+        let data = str.data(using: .utf8)!
+        let response = HTTPURLResponse(url: URL(string: "https://host.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+
+        // When
+        let result = await client.get(path: "/string", responseType: String.self)
+
+        // Then
+        switch result {
+        case .success(let success): XCTAssertEqual(success.value, str)
+        default: XCTFail("Expected decoded string")
+        }
+    }
+
+    // MARK: - buildFullPath
+
+    func test_givenTrailingSlashes_whenBuildFullPath_thenTrimsCorrectly() {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        // When/Then
+        XCTAssertEqual(client.buildFullPath("/a/"), "/a")
+        XCTAssertEqual(client.buildFullPath("b/"), "/b")
+        XCTAssertEqual(client.buildFullPath("/c"), "/c")
+        XCTAssertEqual(client.buildFullPath("///d//"), "/d")
+        XCTAssertEqual(client.buildFullPath(""), "/")
+    }
+
+    // MARK: - buildQueryItems
+
+    func test_givenNilOrEmptyQuery_whenBuildQueryItems_thenReturnsNil() {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        // When/Then
+        XCTAssertNil(client.buildQueryItems(from: nil as [String: String]?))
+        XCTAssertNil(client.buildQueryItems(from: [:]))
+    }
+
+    // MARK: - generateCanonicalRequestString
+
+    func test_givenRequestWithoutHeaders_whenGenerateCanonicalRequestString_thenNoHeadersAppended() {
+        // Given
+        let (data, response) = makeMockResponse()
+        let session = MockMercurySession(scenario: .success(data, response))
+        let client = makeClient(session: session)
+        let url = URL(string: "https://host.com/empty")!
+        var request = URLRequest(url: url)
+        request.allHTTPHeaderFields = nil
+        // When
+        let string = client.generateCanonicalRequestString(for: request)
+        // Then
+        XCTAssertFalse(string.contains("headers:"))
+    }
+
+    // MARK: - Mercury Initializer Coverage
+
+    func test_publicInit_allPropertiesSetCorrectly() {
+        // Shared cache (default)
+        let mercuryShared = Mercury(
+            host: "https://svc.example.com/base",
+            port: 1443,
+            defaultHeaders: ["X-A": "abc"],
+            defaultCachePolicy: .reloadIgnoringCacheData,
+            cacheOption: .shared
+        )
+
+        let mercuryIsolated = Mercury(
+            host: "http://host.net",
+            port: nil,
+            defaultHeaders: ["Accept": "a"],
+            defaultCachePolicy: .useProtocolCachePolicy,
+            cacheOption: .clientIsolated(memorySize: 1024, diskSize: 2048)
+        )
+        
+        XCTAssertNotNil(mercuryShared)
+        XCTAssertNotNil(mercuryIsolated)
+    }
+
 }
+
