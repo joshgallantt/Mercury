@@ -163,6 +163,17 @@ let result = await client.get(
 
 ### Decoding Options
 
+**Any decodable example:**
+
+```swift
+struct User: Decodable {name: String}
+
+let result = await client.get(
+    path: "/users/123",
+    decodeTo: User.self
+)
+```
+
 **Binary data example:**
 
 ```swift
