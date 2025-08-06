@@ -200,7 +200,7 @@ let result = await client.get(
 
 ### Per Request Overrides
 
-Customize headers, query, fragment, or cache policy per call:
+You can override headers, add new ones, or specify a custom cache policy for each request:
 
 ```swift
 let result = await client.get(
