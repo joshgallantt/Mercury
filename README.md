@@ -23,8 +23,8 @@ An easy to use HTTP networking library for Swift with built-in JSON encoding/dec
 1. [Features](#features)
 2. [Installation](#installation)
 3. [Quick Start](#quick-start)
-4. [Making Requests](#making-requests)
-5. [Handling Responses](#handling-responses)
+4. [Advanced](#advanced)
+5. [Responses](#responses)
 6. [Cache Management](#cache-management)
 7. [Error Handling](#error-handling)
 8. [Testing](#testing)
@@ -64,74 +64,42 @@ Then add `"Mercury"` to your targets:
 
 ## Quick Start
 
-### 1. Create a Client
 
-Import Mercury:
-
+### GET
 ```swift
 import Mercury
-```
 
-Create a basic client:
+let client = Mercury(host: "https://accounts.yourApp.com")
 
-```swift
-let client = Mercury(host: "https://api.example.com")
-```
-
-Or configure with options:
-
-```swift
-let client = Mercury(
-    host: "https://api.example.com:8080/v1",
-    defaultHeaders: [
-        "Accept": "application/json",
-        "Authorization": "Bearer your-token"
-    ],
-    defaultCachePolicy: .reloadIgnoringLocalCacheData,
-    cache: .isolated(
-        memorySize: 4_000_000, // 4MB in-memory
-        diskSize: 10_000_000   // 10MB disk
-    )
-)
-```
-
-## Making Requests
-
-### GET Request
-
-Define your response model:
-
-```swift
 struct User: Decodable {
     let id: Int
     let name: String
     let email: String
 }
-```
 
-Make the request:
-
-```swift
 let result = await client.get(
     path: "/users/123",
     responseType: User.self
 )
-```
 
-Handle the response:
-
-```swift
 switch result {
-case .success(let response):
-    print("User: \(response.value.name)")
-case .failure(let error):
-    print("Error: \(error)")
+case .success(let success):
+    print("Got user: \(success.value.name)")
+    // Console: Got user: John Doe
+
+case .failure(let failure):
+    print("Request failed: \(failure)")
+    /*
+    // Console example outputs:
+    Request failed: Decoding failed in 'User' for key 'email'
+    Request failed: 401 Unauthorized: Invalid API token
+    Request failed: 404 Not Found
+    Request failed: Transport error: Lost Connection
+    */
 }
 ```
 
-### POST Request (with Body)
-
-Define your models:
+### POST
 
 ```swift
 struct CreateUserRequest: Encodable {
@@ -145,17 +113,32 @@ struct CreateUserResponse: Decodable {
     let email: String
     let createdAt: String
 }
-```
 
-Make the POST:
-
-```swift
 let newUser = CreateUserRequest(name: "John Doe", email: "john@example.com")
 
 let result = await client.post(
     path: "/users",
     body: newUser,
     responseType: CreateUserResponse.self
+)
+```
+
+## Advanced
+
+### Client Setup
+
+```swift
+let client = Mercury(
+    host: "https://api.example.com:8080/v1",
+    defaultHeaders: [
+        "Accept": "application/json",
+        "Authorization": "Bearer your-token"
+    ],
+    defaultCachePolicy: .reloadIgnoringLocalCacheData,
+    cache: .isolated(
+        memorySize: 4_000_000, // 4MB in-memory
+        diskSize: 10_000_000   // 10MB disk
+    )
 )
 ```
 
@@ -219,7 +202,7 @@ let result = await client.get(
 )
 ```
 
-## Handling Responses
+## Responses
 
 Each request returns a `Result` with:
 
