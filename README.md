@@ -286,6 +286,7 @@ Mercury.clearSharedURLCache()
 > Mercury.clearSharedURLCache() clears the global shared URLCache for your process, this includes any URLSession cache outside of Mercury or its clients.
 
 ## Error Handling
+Pesky decoding errors? Not anymore, see exatly which key you forgot to make optional:
 
 Simple error handling:
 
@@ -298,7 +299,7 @@ case .success(let success):
 case .failure(let failure):
     print("Request failed: \(failure)")
     /*
-    // Console example outputs:
+    // Example outputs:
     Request failed: Decoding failed in 'User' for key 'email'
     Request failed: 401 Unauthorized: Invalid API token
     Request failed: 404 Not Found
