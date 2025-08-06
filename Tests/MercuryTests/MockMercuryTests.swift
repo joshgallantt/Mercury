@@ -46,7 +46,7 @@ final class MockMercuryTests: XCTestCase {
         XCTAssertEqual(call?.path, "/users/1")
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.value, user)
+            XCTAssertEqual(success.data, user)
         case .failure(let failure):
             XCTFail("Expected success, got failure: \(failure)")
         }
@@ -65,7 +65,7 @@ final class MockMercuryTests: XCTestCase {
         XCTAssertEqual(mock.callCount(for: .POST, path: "/users"), 1)
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.value, newUser)
+            XCTAssertEqual(success.data, newUser)
         case .failure:
             XCTFail("Expected success")
         }
@@ -85,15 +85,15 @@ final class MockMercuryTests: XCTestCase {
 
         // Then
         switch putResult {
-        case .success(let s): XCTAssertEqual(s.value, updatedUser)
+        case .success(let s): XCTAssertEqual(s.data, updatedUser)
         case .failure: XCTFail("Expected success for PUT")
         }
         switch patchResult {
-        case .success(let s): XCTAssertEqual(s.value, updatedUser)
+        case .success(let s): XCTAssertEqual(s.data, updatedUser)
         case .failure: XCTFail("Expected success for PATCH")
         }
         switch deleteResult {
-        case .success(let s): XCTAssertEqual(s.value, updatedUser)
+        case .success(let s): XCTAssertEqual(s.data, updatedUser)
         case .failure: XCTFail("Expected success for DELETE")
         }
         XCTAssertEqual(mock.callCount(for: .PUT, path: "/users/3"), 1)
@@ -153,8 +153,8 @@ final class MockMercuryTests: XCTestCase {
         // Then
         switch (aliceResult, bobResult) {
         case (.success(let a), .success(let b)):
-            XCTAssertEqual(a.value, alice)
-            XCTAssertEqual(b.value, bob)
+            XCTAssertEqual(a.data, alice)
+            XCTAssertEqual(b.data, bob)
         default:
             XCTFail("Expected both stubs to succeed")
         }
@@ -187,7 +187,7 @@ final class MockMercuryTests: XCTestCase {
         // Then
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.value, second, "Last stub should win")
+            XCTAssertEqual(success.data, second, "Last stub should win")
         case .failure:
             XCTFail("Expected success")
         }

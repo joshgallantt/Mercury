@@ -59,7 +59,7 @@ final class MercuryTests: XCTestCase {
         // Then
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.value, "success")
+            XCTAssertEqual(success.data, "success")
             XCTAssertEqual(success.httpResponse.statusCode, 200)
             XCTAssertFalse(success.requestSignature.isEmpty)
         case .failure:
@@ -81,7 +81,7 @@ final class MercuryTests: XCTestCase {
         // Then
         switch result {
         case .success(let success):
-            XCTAssertEqual(success.value, body)
+            XCTAssertEqual(success.data, body)
             XCTAssertEqual(success.httpResponse.statusCode, 201)
             XCTAssertFalse(success.requestSignature.isEmpty)
         case .failure:
@@ -261,7 +261,7 @@ final class MercuryTests: XCTestCase {
         ] {
             switch call {
             case .success(let success):
-                XCTAssertEqual(success.value, response, "Failed for \(method)")
+                XCTAssertEqual(success.data, response, "Failed for \(method)")
                 XCTAssertFalse(success.requestSignature.isEmpty, "Failed for \(method)")
             case .failure:
                 XCTFail("Expected success for \(method)")
@@ -458,7 +458,7 @@ final class MercuryTests: XCTestCase {
 
         // Then
         switch result {
-        case .success(let success): XCTAssertEqual(success.value, data)
+        case .success(let success): XCTAssertEqual(success.data, data)
         default: XCTFail("Expected raw Data")
         }
     }
@@ -476,7 +476,7 @@ final class MercuryTests: XCTestCase {
 
         // Then
         switch result {
-        case .success(let success): XCTAssertEqual(success.value, str)
+        case .success(let success): XCTAssertEqual(success.data, str)
         default: XCTFail("Expected decoded string")
         }
     }

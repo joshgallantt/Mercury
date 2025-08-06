@@ -11,7 +11,7 @@
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
-[![Coverage](https://img.shields.io/badge/Coverage-98.2%25-brightgreen.svg?style=flat)](#)
+[![Coverage](https://img.shields.io/badge/Coverage-98.4%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
@@ -84,7 +84,7 @@ let result = await client.get(
 
 switch result {
 case .success(let success):
-    print("Got user: \(success.value.name)")
+    print("Got user: \(success.data.name)")
     // Console: Got user: John Doe
 
 case .failure(let failure):
@@ -213,7 +213,7 @@ Each request returns a `Result` with:
 
 ```swift
 case .success(let success):
-    let value = success.value
+    let data = success.data
     let httpResponse = success.httpResponse
     let requestString = success.requestString
     let signature = success.requestSignature
@@ -281,7 +281,7 @@ Simple error handling:
 ```swift
 switch result {
 case .success(let success):
-    print("Got user: \(success.value.name)")
+    print("Got user: \(success.data.name)")
     // Console: Got user: John Doe
 
 case .failure(let failure):

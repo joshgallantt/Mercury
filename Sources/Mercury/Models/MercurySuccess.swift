@@ -8,11 +8,11 @@
 import Foundation
 import CryptoKit
 
-/// Represents a successful HTTP response with a decoded value.
-public struct MercurySuccess<Value: Decodable> {
+/// Represents a successful HTTP response with a decoded data.
+public struct MercurySuccess<Data: Decodable> {
     
-    /// The decoded response value.
-    public let value: Value
+    /// The decoded response data.
+    public let data: Data
 
     /// The raw HTTP response metadata.
     public let httpResponse: HTTPURLResponse
@@ -26,18 +26,19 @@ public struct MercurySuccess<Value: Decodable> {
             return ""
         }
         
-        let data = Data(requestString.utf8)
+        let data = Foundation.Data(requestString.utf8)
         let hash = SHA256.hash(data: data)
         return hash.map { String(format: "%02x", $0) }.joined()
     }
     
     public init(
-        value: Value,
+        value: Data,
         httpResponse: HTTPURLResponse,
         requestString: String
     ) {
-        self.value = value
+        self.data = value
         self.httpResponse = httpResponse
         self.requestString = requestString
     }
 }
+

@@ -23,7 +23,7 @@ final class MercuryModelTests: XCTestCase {
         let success = MercurySuccess(value: user, httpResponse: response, requestString: requestString)
 
         // Then
-        XCTAssertEqual(success.value, user)
+        XCTAssertEqual(success.data, user)
         XCTAssertEqual(success.httpResponse.statusCode, 200)
         XCTAssertEqual(success.requestString, requestString)
         XCTAssertFalse(success.requestSignature.isEmpty)

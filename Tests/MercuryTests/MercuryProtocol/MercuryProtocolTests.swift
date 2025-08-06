@@ -48,7 +48,7 @@ final class MercuryProtocolTests: XCTestCase {
         for (method, result) in [("GET", getResult), ("POST", postResult), ("PUT", putResult), ("PATCH", patchResult), ("DELETE", deleteResult)] {
             switch result {
             case .success(let success):
-                XCTAssertEqual(success.value.foo, method.lowercased(), "Failed for \(method)")
+                XCTAssertEqual(success.data.foo, method.lowercased(), "Failed for \(method)")
             case .failure:
                 XCTFail("Expected success for \(method)")
             }
@@ -112,7 +112,7 @@ final class MercuryProtocolTests: XCTestCase {
         for (expected, result) in tuples {
             switch result {
             case .success(let success):
-                XCTAssertEqual(success.value.foo, expected, "Expected \(expected) for \(expected)")
+                XCTAssertEqual(success.data.foo, expected, "Expected \(expected) for \(expected)")
             case .failure:
                 XCTFail("Expected success for \(expected)")
             }
@@ -180,7 +180,7 @@ final class MercuryProtocolTests: XCTestCase {
         for (expected, result) in tuples {
             switch result {
             case .success(let success):
-                XCTAssertEqual(success.value.foo, expected, "Expected \(expected) for \(expected)")
+                XCTAssertEqual(success.data.foo, expected, "Expected \(expected) for \(expected)")
             case .failure:
                 XCTFail("Expected success for \(expected)")
             }
@@ -212,7 +212,7 @@ final class MercuryProtocolTests: XCTestCase {
         for (expected, result) in results {
             switch result {
             case .success(let success):
-                XCTAssertEqual(success.value.foo, expected)
+                XCTAssertEqual(success.data.foo, expected)
             case .failure:
                 XCTFail("Expected success for \(expected)")
             }
@@ -241,7 +241,7 @@ final class MercuryProtocolTests: XCTestCase {
         for (expected, result) in results {
             switch result {
             case .success(let success):
-                XCTAssertEqual(success.value.foo, expected)
+                XCTAssertEqual(success.data.foo, expected)
             case .failure:
                 XCTFail("Expected success for \(expected)")
             }

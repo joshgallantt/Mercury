@@ -11,7 +11,7 @@ import CryptoKit
 /// Represents a failed HTTP request, including a machine-readable error and the request signature.
 public struct MercuryFailure: Error, CustomStringConvertible {
     
-    /// The decoded response value.
+    /// The decoded response data.
     public let error: MercuryError
 
     /// The raw HTTP response metadata, if one was provided.
