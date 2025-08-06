@@ -32,7 +32,7 @@ An easy to use HTTP networking library for Swift with built-in JSON encoding/dec
 
 ## Features
 
-* **Type-aware:** Codable encoding/decoding for request and response
+* **Automatic Coding:** Automatically encodes requests and decodes responses
 * **Result-based:** Uses Swift’s `Result` type for clean error handling
 * **Cache:** Ready-to-use with `URLCache`
 * **Flexible:** Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE)
