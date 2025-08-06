@@ -181,6 +181,15 @@ let result = await client.get(
 )
 ```
 
+**Don't care about data returned? No problem:**
+
+```swift
+let result = await client.post(
+    path: "/health",
+    body: newUser
+)
+```
+
 ### Per Request Overrides
 
 You can override headers, add new ones, or specify a custom cache policy for each request:
