@@ -289,7 +289,7 @@ Mercury.clearSharedURLCache()
 ```
 
 > [!WARNING]
-> This clears the global shared URLCache for your process, this includes any URLSession cache outside of Mercury or its clients.
+> Mercury.clearSharedURLCache() clears the global shared URLCache for your process, this includes any URLSession cache outside of Mercury or its clients.
 
 ## Error Handling
 
