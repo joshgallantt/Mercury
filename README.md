@@ -163,7 +163,7 @@ let result = await client.get(
 
 ### Decoding Options
 
-**Any decodable example:**
+**Decode into any object:**
 
 ```swift
 struct User: Decodable {name: String}
@@ -174,7 +174,7 @@ let result = await client.get(
 )
 ```
 
-**Binary data example:**
+**Or Keep as Binary Data:**
 
 ```swift
 let result = await client.get(
@@ -183,7 +183,7 @@ let result = await client.get(
 )
 ```
 
-**Text response example:**
+**Or simple text:**
 
 ```swift
 let result = await client.get(
