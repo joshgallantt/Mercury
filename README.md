@@ -205,7 +205,7 @@ case .failure(let error):
 ```
 
 ### 5. Per Request Overrides
-You can override or add additional values at the time of request:
+At the time of request you can override or add additional data:
 ```swift
 let result = await client.get(
     path: "/users/123",
@@ -240,9 +240,17 @@ case .success(let success):
     let signature = success.requestSignature      // Unique request signature (SHA256)
 
     print("Status Code: \(httpResponse.statusCode)")
+    // Status Code: 200
+
     print("Headers: \(httpResponse.allHeaderFields)")
+    // Headers: ["Content-Type": "application/json", "X-Request-ID": "abcd-efgh"]
+
     print("Request String: \(requestString)")
+    // Request String: GET|https://api.example.com/v1/users/123|headers:accept:application/json&content-type:application/json
+
     print("Request Signature: \(signature)")
+    // Request Signature: 2ca7f2481a7d7d4e31ad24bb3fbb13d79e531c55a5a44af8a1b7d1c8f2a3ea8a
+
 case .failure:
     // Handle failure
 }
@@ -256,6 +264,7 @@ When a request fails, you receive a `MercuryFailure` containing:
 switch result {
 case .success:
     // Handle success
+
 case .failure(let failure):
     let error = failure.error                     // The specific error type
     let httpResponse = failure.httpResponse       // HTTP response if available
@@ -263,31 +272,19 @@ case .failure(let failure):
     let signature = failure.requestSignature      // Unique request signature (SHA256)
 
     print("Error: \(failure.description)")
+    // Error: 404 Not Found
+
     print("Request String: \(requestString)")
+    // Request String: GET|https://api.example.com/v1/users/999|headers:accept:application/json&content-type:application/json
+
     print("Request Signature: \(signature)")
+    // Request Signature: 6d967252b5e347e612fb7caa0cbe0b6318d07db96902d2a2b7e1f804012debc2
 }
 ```
 
 ### Request Signatures
 
 Every request generates a deterministic **canonical string** and a unique **signature** for debugging, caching, and logging:
-
-```swift
-let result = await client.get(path: "/users/123", responseType: User.self)
-
-switch result {
-case .success(let response):
-    print("Request string: \(response.requestString)")
-    // Example: "GET|https://api.example.com/users/123|headers:accept:application/json&content-type:application/json"
-    
-    print("Request signature: \(response.requestSignature)")
-    // Example: "cf9926cb53728d1111a042f03eb64cba298bdd2df0e0909a9f39c3523cfe7271"
-    
-case .failure(let failure):
-    print("Failed request string: \(failure.requestString)")
-    print("Failed request signature: \(failure.requestSignature)")
-}
-```
 
 **The `requestString` includes:**
 
