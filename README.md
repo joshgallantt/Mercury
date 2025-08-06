@@ -38,6 +38,8 @@ An easy to use HTTP networking library for Swift with built-in JSON encoding/dec
 * **Flexible:** Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE)
 * **Configurable:** Custom headers, query parameters, caching, and more
 * **Testable:** Built-in mocking and stubbing for reliable tests
+* **Lightweight:** ~2MB and 0 dependancies, now and forever.
+
 
 ## Installation
 
