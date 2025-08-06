@@ -161,7 +161,7 @@ let result = await client.get(
 )
 ```
 
-### Decoding Raw Data (Images, Files)
+### Decoding Options
 
 **Binary data example:**
 
