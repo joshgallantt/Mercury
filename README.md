@@ -18,7 +18,7 @@
 
 # Mercury
 
-A easy to use type-aware HTTP networking library for Swift with built-in JSON encoding/decoding, comprehensive error handling, and powerful testing capabilities.
+An easy to use HTTP networking library for Swift with built-in JSON encoding/decoding, comprehensive error handling, and powerful testing capabilities.
 
 ## Features
 
@@ -71,9 +71,9 @@ let client = Mercury(
         "Authorization": "Bearer your-token"
     ],
     defaultCachePolicy: .reloadIgnoringLocalCacheData,
-    cacheOption: .clientIsolated(
+    cache: .isolated(
         memorySize: 4_000_000,  // 4MB
-        diskSize: 20_000_000     // 20MB
+        diskSize: 10_000_000    // 10MB
     )
 )
 ```
@@ -271,7 +271,7 @@ case .failure(let failure):
     let requestString = failure.requestString     // Canonical request string
     let signature = failure.requestSignature      // Unique request signature (SHA256)
 
-    print("Error: \(failure.description)")
+    print("Error: \(failure)")
     // Error: 404 Not Found
 
     print("Request String: \(requestString)")
@@ -298,31 +298,36 @@ Every request generates a deterministic **canonical string** and a unique **sign
 * **Stable**: same request, same signature every time
 * **Collision-resistant**: suitable for cache keys, request tracking, etc.
 
-**Use these for:**
-
-* **Debugging**: Identify exactly which request succeeded or failed
-* **Caching**: Use the request signature as a cache key
-* **Logging**: Track unique request patterns
-* **Testing**: Verify that the exact request was made
+> [!TIP]
+> These values are useful for cache keys, logging, or debugging.
 
 ## Cache Management
 
+Mercury supports both **shared** and **isolated** cache strategies to optimize networking performance and resource usage. By default, each client uses `URLCache.shared`, but you can specify on per client with custom limits.
+
+> [!TIP]
+> Choose `.shared` for simplicity and interoperability, or `.isolated` for stricter cache boundaries and customizable storage.
+
 ```swift
-// Client with isolated cache
+import Mercury
+
 let client = Mercury(
     host: "https://api.example.com",
-    cacheOption: .clientIsolated(
-        memorySize: 4_000_000,   // 4MB memory
-        diskSize: 20_000_000      // 20MB disk
+    cache: .isolated(
+        memorySize: 4_000_000,    // 4MB in-memory cache
+        diskSize: 20_000_000      // 20MB on-disk cache
     )
 )
 
-// Clear this client's cache
+// Clear this client's isolated cache.
 client.clearCache()
 
-// Clear the global shared cache (affects all clients using .shared)
-Mercury.clearAllSharedCache()
+
+Mercury.clearSharedURLCache()
 ```
+
+> [!WARNING]
+> Mercury.clearSharedURLCache() will clear the URLCache shared across the process, not just isolated to the Mercury or its client.
 
 ## Error Handling
 
@@ -352,6 +357,7 @@ case .failure(let failure):
 ```
 
 ### Comprehensive Error Handling
+If you need to handle specific errors, you can:
 
 ```swift
 switch result {

@@ -19,7 +19,7 @@ public struct Mercury: MercuryProtocol {
     private let session: MercurySession
     
     // Cache
-    private let cacheOption: MercuryCacheContext
+    private let cache: MercuryCache
     private let urlCache: URLCache?
     private let defaultCachePolicy: URLRequest.CachePolicy
     
@@ -36,9 +36,9 @@ public struct Mercury: MercuryProtocol {
     ///   - port: Overrides the port parsed from `host`. If not provided, the port from `host` is used if present.
     ///   - defaultHeaders: Default HTTP headers to include with every request. The default is `["Accept": "application/json", "Content-Type": "application/json"]`.
     ///   - defaultCachePolicy: The cache policy applied to all requests unless overridden per-request. Defaults to `.useProtocolCachePolicy`.
-    ///   - cacheOption: Controls response caching. Use `.shared` for system-wide caching, or `.clientIsolated` to isolate cache usage per Mercury instance with custom memory/disk sizes.
+    ///   - cache: Controls response caching. Use `.shared` for system-wide caching, or `.isolated` to isolate cache usage per Mercury instance with custom memory/disk sizes.
     ///
-    /// If `cacheOption` is `.clientIsolated`, a private `URLCache` is created for this instance. Otherwise, the global shared cache is used.
+    /// If `cache` is `.isolated`, a private `URLCache` is created for this instance. Otherwise, the global shared cache is used.
     ///
     /// Example:
     /// ```swift
@@ -47,7 +47,7 @@ public struct Mercury: MercuryProtocol {
     ///     defaultHeaders: [
     ///         "Authorization": "Bearer <token>"
     ///     ],
-    ///     cacheOption: .clientIsolated(memorySize: 2_000_000, diskSize: 10_000_000)
+    ///     cache: .isolated(memorySize: 2_000_000, diskSize: 10_000_000)
     /// )
     /// ```
     public init(
@@ -58,7 +58,7 @@ public struct Mercury: MercuryProtocol {
             "Content-Type": "application/json"
         ],
         defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
-        cacheOption: MercuryCacheContext = .shared
+        cache: MercuryCache = .shared
     ) {
         let components = URLComponentsParser.parse(host)
         self.scheme = components.scheme
@@ -67,17 +67,17 @@ public struct Mercury: MercuryProtocol {
         self.basePath = components.basePath
         self.defaultHeaders = defaultHeaders
         self.defaultCachePolicy = defaultCachePolicy
-        self.cacheOption = cacheOption
+        self.cache = cache
 
         let (resolvedCache, resolvedSession): (URLCache?, URLSession)
-        switch cacheOption {
+        switch cache {
         case .shared:
             resolvedCache = nil
             let config = URLSessionConfiguration.default
             config.urlCache = .shared
             config.requestCachePolicy = defaultCachePolicy
             resolvedSession = URLSession(configuration: config)
-        case .clientIsolated(let memory, let disk):
+        case .isolated(let memory, let disk):
             let cache = URLCache(memoryCapacity: memory, diskCapacity: disk)
             resolvedCache = cache
             let config = URLSessionConfiguration.default
@@ -100,7 +100,7 @@ public struct Mercury: MercuryProtocol {
             "Content-Type": "application/json"
         ],
         defaultCachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
-        cacheOption: MercuryCacheContext = .shared,
+        cache: MercuryCache = .shared,
         urlCache: URLCache? = nil
     ) {
         let components = URLComponentsParser.parse(host)
@@ -110,7 +110,7 @@ public struct Mercury: MercuryProtocol {
         self.basePath = components.basePath
         self.defaultHeaders = defaultHeaders
         self.defaultCachePolicy = defaultCachePolicy
-        self.cacheOption = cacheOption
+        self.cache = cache
         self.urlCache = urlCache
         self.session = session
     }
@@ -123,12 +123,12 @@ public struct Mercury: MercuryProtocol {
     /// - Warning: This will remove **all** cached URL responses from the global shared cache,
     ///   including those created outside of Mercury. This may impact other networking clients,
     ///   libraries, or system requests that rely on the shared cache. Use with caution!
-    static func clearAllSharedCache() {
+    static func clearSharedURLCache() {
         URLCache.shared.removeAllCachedResponses()
     }
 
     
-    /// Clears the cache used by this Mercury client, if using `.clientIsolated`.
+    /// Clears the cache used by this Mercury client, if using `.isolated`.
     public func clearCache() {
         urlCache?.removeAllCachedResponses()
     }

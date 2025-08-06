@@ -393,13 +393,13 @@ final class MercuryTests: XCTestCase {
             session: session,
             defaultHeaders: ["Test": "Value"],
             defaultCachePolicy: .reloadIgnoringCacheData,
-            cacheOption: .clientIsolated(memorySize: 512, diskSize: 1024),
+            cache: .isolated(memorySize: 512, diskSize: 1024),
             urlCache: cache
         )
 
         // When/Then (just calls, checks don’t crash)
         client.clearCache()
-        Mercury.clearAllSharedCache()
+        Mercury.clearSharedURLCache()
     }
 
     // MARK: - mergeHeaders
@@ -533,7 +533,7 @@ final class MercuryTests: XCTestCase {
             port: 1443,
             defaultHeaders: ["X-A": "abc"],
             defaultCachePolicy: .reloadIgnoringCacheData,
-            cacheOption: .shared
+            cache: .shared
         )
 
         let mercuryIsolated = Mercury(
@@ -541,7 +541,7 @@ final class MercuryTests: XCTestCase {
             port: nil,
             defaultHeaders: ["Accept": "a"],
             defaultCachePolicy: .useProtocolCachePolicy,
-            cacheOption: .clientIsolated(memorySize: 1024, diskSize: 2048)
+            cache: .isolated(memorySize: 1024, diskSize: 2048)
         )
         
         XCTAssertNotNil(mercuryShared)
