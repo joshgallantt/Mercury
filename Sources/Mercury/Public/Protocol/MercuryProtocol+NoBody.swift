@@ -16,7 +16,7 @@ extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - decodeInto: The expected `Decodable` response type.
+    ///   - decodeTo: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func post<Response: Decodable>(
@@ -25,7 +25,7 @@ extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await post(
             path: path,
@@ -34,7 +34,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
 
@@ -46,7 +46,7 @@ extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - decodeInto: The expected `Decodable` response type.
+    ///   - decodeTo: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func put<Response: Decodable>(
@@ -55,7 +55,7 @@ extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await put(
             path: path,
@@ -64,7 +64,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
 
@@ -76,7 +76,7 @@ extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - decodeInto: The expected `Decodable` response type.
+    ///   - decodeTo: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func patch<Response: Decodable>(
@@ -85,7 +85,7 @@ extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await patch(
             path: path,
@@ -94,7 +94,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
 
@@ -106,7 +106,7 @@ extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - decodeInto: The expected `Decodable` response type.
+    ///   - decodeTo: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func delete<Response: Decodable>(
@@ -115,7 +115,7 @@ extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await delete(
             path: path,
@@ -124,7 +124,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
 }

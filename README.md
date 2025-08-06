@@ -79,7 +79,7 @@ struct User: Decodable {
 
 let result = await client.get(
     path: "/users/123",
-    decodeInto: User.self
+    decodeTo: User.self
 )
 
 switch result {
@@ -119,7 +119,7 @@ let newUser = CreateUserRequest(name: "John Doe", email: "john@example.com")
 let result = await client.post(
     path: "/users",
     body: newUser,
-    decodeInto: CreateUserResponse.self
+    decodeTo: CreateUserResponse.self
 )
 ```
 
@@ -157,7 +157,7 @@ struct UserProfile: Decodable {
 ```swift
 let result = await client.get(
     path: "/users/123/profile",
-    decodeInto: UserProfile.self
+    decodeTo: UserProfile.self
 )
 ```
 
@@ -168,7 +168,7 @@ let result = await client.get(
 ```swift
 let result = await client.get(
     path: "/users/123/avatar",
-    decodeInto: Data.self
+    decodeTo: Data.self
 )
 ```
 
@@ -177,7 +177,7 @@ let result = await client.get(
 ```swift
 let result = await client.get(
     path: "/health",
-    decodeInto: String.self
+    decodeTo: String.self
 )
 ```
 
@@ -198,7 +198,7 @@ let result = await client.get(
     ],
     fragment: "section",
     cachePolicy: .reloadIgnoringLocalCacheData,
-    decodeInto: User.self
+    decodeTo: User.self
 )
 ```
 
@@ -372,7 +372,7 @@ func test_givenServerError_whenFetchUser_thenReturnsNil() async {
         method: .GET,
         path: "/users/123",
         error: .server(statusCode: 404, data: nil),
-        decodeInto: User.self
+        decodeTo: User.self
     )
 
     // When

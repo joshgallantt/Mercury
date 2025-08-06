@@ -32,10 +32,10 @@ final class MercuryProtocol_NoBody_Tests: XCTestCase {
         let mercury: MercuryProtocol = mock
 
         // When
-        let postResult = await mercury.post(path: "/nobody", decodeInto: DummyResponse.self)
-        let putResult = await mercury.put(path: "/nobody", decodeInto: DummyResponse.self)
-        let patchResult = await mercury.patch(path: "/nobody", decodeInto: DummyResponse.self)
-        let deleteResult = await mercury.delete(path: "/nobody", decodeInto: DummyResponse.self)
+        let postResult = await mercury.post(path: "/nobody", decodeTo: DummyResponse.self)
+        let putResult = await mercury.put(path: "/nobody", decodeTo: DummyResponse.self)
+        let patchResult = await mercury.patch(path: "/nobody", decodeTo: DummyResponse.self)
+        let deleteResult = await mercury.delete(path: "/nobody", decodeTo: DummyResponse.self)
 
         // Then
         let results = [
@@ -67,7 +67,7 @@ final class MercuryProtocol_NoBody_Tests: XCTestCase {
             query: query,
             fragment: fragment,
             cachePolicy: cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         
         // Then

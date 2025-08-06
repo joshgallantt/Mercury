@@ -139,7 +139,7 @@ public struct Mercury: MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await performRequest(
             method: .GET,
@@ -149,7 +149,7 @@ public struct Mercury: MercuryProtocol {
             fragment: fragment,
             cachePolicy: cachePolicy,
             body: nil as Data?,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
     
@@ -160,7 +160,7 @@ public struct Mercury: MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await performRequest(
             method: .POST,
@@ -170,7 +170,7 @@ public struct Mercury: MercuryProtocol {
             fragment: fragment,
             cachePolicy: cachePolicy,
             body: body,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
     
@@ -181,7 +181,7 @@ public struct Mercury: MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await performRequest(
             method: .PUT,
@@ -191,7 +191,7 @@ public struct Mercury: MercuryProtocol {
             fragment: fragment,
             cachePolicy: cachePolicy,
             body: body,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
     
@@ -202,7 +202,7 @@ public struct Mercury: MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await performRequest(
             method: .PATCH,
@@ -212,7 +212,7 @@ public struct Mercury: MercuryProtocol {
             fragment: fragment,
             cachePolicy: cachePolicy,
             body: body,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
     
@@ -223,7 +223,7 @@ public struct Mercury: MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await performRequest(
             method: .DELETE,
@@ -233,7 +233,7 @@ public struct Mercury: MercuryProtocol {
             fragment: fragment,
             cachePolicy: cachePolicy,
             body: body,
-            decodeInto: decodeInto
+            decodeTo: decodeTo
         )
     }
     
@@ -260,7 +260,7 @@ public struct Mercury: MercuryProtocol {
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
         body: Body?,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         // Step 1: Validate host
         guard !host.isEmpty else {
@@ -301,7 +301,7 @@ public struct Mercury: MercuryProtocol {
         // Step 7: Handle response
         return result(
             networkResult: networkResult,
-            decodeInto: decodeInto,
+            decodeTo: decodeTo,
             requestString: requestString
         )
     }
@@ -389,7 +389,7 @@ public struct Mercury: MercuryProtocol {
     
     private func result<Response: Decodable>(
         networkResult: Result<(Data, HTTPURLResponse), MercuryError>,
-        decodeInto: Response.Type,
+        decodeTo: Response.Type,
         requestString: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         switch networkResult {
@@ -400,7 +400,7 @@ public struct Mercury: MercuryProtocol {
             return processResponse(
                 data: data,
                 httpResponse: httpResponse,
-                decodeInto: decodeInto,
+                decodeTo: decodeTo,
                 signature: requestString
             )
         }
@@ -409,7 +409,7 @@ public struct Mercury: MercuryProtocol {
     private func processResponse<Response: Decodable>(
         data: Data,
         httpResponse: HTTPURLResponse,
-        decodeInto: Response.Type,
+        decodeTo: Response.Type,
         signature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         
@@ -417,7 +417,7 @@ public struct Mercury: MercuryProtocol {
             return decodeResponse(
                 data: data,
                 httpResponse: httpResponse,
-                decodeInto: decodeInto,
+                decodeTo: decodeTo,
                 signature: signature
             )
         }
@@ -437,12 +437,12 @@ public struct Mercury: MercuryProtocol {
     private func decodeResponse<Response: Decodable>(
         data: Data,
         httpResponse: HTTPURLResponse,
-        decodeInto: Response.Type,
+        decodeTo: Response.Type,
         signature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         do {
             // Handle Data.self
-            if decodeInto == Data.self, let value = data as? Response {
+            if decodeTo == Data.self, let value = data as? Response {
                 return .success(MercurySuccess(
                     value: value,
                     httpResponse: httpResponse,
@@ -451,7 +451,7 @@ public struct Mercury: MercuryProtocol {
             }
             
             // Handle String.self
-            if decodeInto == String.self, let string = String(data: data, encoding: .utf8), let value = string as? Response {
+            if decodeTo == String.self, let string = String(data: data, encoding: .utf8), let value = string as? Response {
                 return .success(MercurySuccess(
                     value: value,
                     httpResponse: httpResponse,
@@ -460,7 +460,7 @@ public struct Mercury: MercuryProtocol {
             }
             
             // Otherwise, try JSON decoding
-            let decoded = try JSONDecoder().decode(decodeInto, from: data)
+            let decoded = try JSONDecoder().decode(decodeTo, from: data)
             return .success(
                 MercurySuccess(
                     value: decoded,
@@ -469,11 +469,11 @@ public struct Mercury: MercuryProtocol {
                 )
             )
         } catch {
-            let keyPath = extractKeyPath(from: error, for: decodeInto)
+            let keyPath = extractKeyPath(from: error, for: decodeTo)
             return .failure(
                 MercuryFailure(
                     error: .decoding(
-                        namespace: String(describing: decodeInto),
+                        namespace: String(describing: decodeTo),
                         key: keyPath,
                         underlyingError: error
                     ),

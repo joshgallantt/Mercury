@@ -39,11 +39,11 @@ final class MercuryProtocolTests: XCTestCase {
         let mercury: MercuryProtocol = mock
 
         // When/Then - Test default parameter extensions
-        let getResult = await mercury.get(path: "/test", decodeInto: DummyResponse.self)
-        let postResult = await mercury.post(path: "/test", decodeInto: DummyResponse.self)
-        let putResult = await mercury.put(path: "/test", decodeInto: DummyResponse.self)
-        let patchResult = await mercury.patch(path: "/test", decodeInto: DummyResponse.self)
-        let deleteResult = await mercury.delete(path: "/test", decodeInto: DummyResponse.self)
+        let getResult = await mercury.get(path: "/test", decodeTo: DummyResponse.self)
+        let postResult = await mercury.post(path: "/test", decodeTo: DummyResponse.self)
+        let putResult = await mercury.put(path: "/test", decodeTo: DummyResponse.self)
+        let patchResult = await mercury.patch(path: "/test", decodeTo: DummyResponse.self)
+        let deleteResult = await mercury.delete(path: "/test", decodeTo: DummyResponse.self)
 
         for (method, result) in [("GET", getResult), ("POST", postResult), ("PUT", putResult), ("PATCH", patchResult), ("DELETE", deleteResult)] {
             switch result {
@@ -77,7 +77,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let putResult = await mercury.put(
             path: "/explicit",
@@ -86,7 +86,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let patchResult = await mercury.patch(
             path: "/explicit",
@@ -95,7 +95,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let deleteResult = await mercury.delete(
             path: "/explicit",
@@ -104,7 +104,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
 
         // Then
@@ -138,7 +138,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let postResult = await mercury.post(
             path: "/explicit",
@@ -146,7 +146,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let putResult = await mercury.put(
             path: "/explicit",
@@ -154,7 +154,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let patchResult = await mercury.patch(
             path: "/explicit",
@@ -162,7 +162,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
         let deleteResult = await mercury.delete(
             path: "/explicit",
@@ -170,7 +170,7 @@ final class MercuryProtocolTests: XCTestCase {
             query: allParams.query,
             fragment: allParams.fragment,
             cachePolicy: allParams.cache,
-            decodeInto: DummyResponse.self
+            decodeTo: DummyResponse.self
         )
 
         // Then
@@ -197,10 +197,10 @@ final class MercuryProtocolTests: XCTestCase {
         let mercury: MercuryProtocol = mock
 
         // When
-        let postResult = await mercury.post(path: "/other", body: body, decodeInto: DummyResponse.self)
-        let putResult = await mercury.put(path: "/other", body: body, decodeInto: DummyResponse.self)
-        let patchResult = await mercury.patch(path: "/other", body: body, decodeInto: DummyResponse.self)
-        let deleteResult = await mercury.delete(path: "/other", body: body, decodeInto: DummyResponse.self)
+        let postResult = await mercury.post(path: "/other", body: body, decodeTo: DummyResponse.self)
+        let putResult = await mercury.put(path: "/other", body: body, decodeTo: DummyResponse.self)
+        let patchResult = await mercury.patch(path: "/other", body: body, decodeTo: DummyResponse.self)
+        let deleteResult = await mercury.delete(path: "/other", body: body, decodeTo: DummyResponse.self)
 
         // Then
         let results = [
@@ -229,10 +229,10 @@ final class MercuryProtocolTests: XCTestCase {
         let mercury: MercuryProtocol = mock
 
         // When
-        let postResult = await mercury.post(path: "/body_nil", body: Optional<DummyBody>.none, decodeInto: DummyResponse.self)
-        let putResult = await mercury.put(path: "/body_nil", body: Optional<DummyBody>.none, decodeInto: DummyResponse.self)
-        let patchResult = await mercury.patch(path: "/body_nil", body: Optional<DummyBody>.none, decodeInto: DummyResponse.self)
-        let deleteResult = await mercury.delete(path: "/body_nil", body: Optional<DummyBody>.none, decodeInto: DummyResponse.self)
+        let postResult = await mercury.post(path: "/body_nil", body: Optional<DummyBody>.none, decodeTo: DummyResponse.self)
+        let putResult = await mercury.put(path: "/body_nil", body: Optional<DummyBody>.none, decodeTo: DummyResponse.self)
+        let patchResult = await mercury.patch(path: "/body_nil", body: Optional<DummyBody>.none, decodeTo: DummyResponse.self)
+        let deleteResult = await mercury.delete(path: "/body_nil", body: Optional<DummyBody>.none, decodeTo: DummyResponse.self)
 
         // Then
         let results = [
@@ -250,20 +250,20 @@ final class MercuryProtocolTests: XCTestCase {
 
     func test_givenProtocolMethods_whenFailureIsStubbed_thenReturnsFailure() async {
         // Given
-        mock.stubFailure(method: .GET, path: "/fail", error: .server(statusCode: 500, data: nil), decodeInto: DummyResponse.self)
-        mock.stubFailure(method: .POST, path: "/fail", error: .server(statusCode: 500, data: nil), decodeInto: DummyResponse.self)
-        mock.stubFailure(method: .PUT, path: "/fail", error: .server(statusCode: 500, data: nil), decodeInto: DummyResponse.self)
-        mock.stubFailure(method: .PATCH, path: "/fail", error: .server(statusCode: 500, data: nil), decodeInto: DummyResponse.self)
-        mock.stubFailure(method: .DELETE, path: "/fail", error: .server(statusCode: 500, data: nil), decodeInto: DummyResponse.self)
+        mock.stubFailure(method: .GET, path: "/fail", error: .server(statusCode: 500, data: nil), decodeTo: DummyResponse.self)
+        mock.stubFailure(method: .POST, path: "/fail", error: .server(statusCode: 500, data: nil), decodeTo: DummyResponse.self)
+        mock.stubFailure(method: .PUT, path: "/fail", error: .server(statusCode: 500, data: nil), decodeTo: DummyResponse.self)
+        mock.stubFailure(method: .PATCH, path: "/fail", error: .server(statusCode: 500, data: nil), decodeTo: DummyResponse.self)
+        mock.stubFailure(method: .DELETE, path: "/fail", error: .server(statusCode: 500, data: nil), decodeTo: DummyResponse.self)
 
         let mercury: MercuryProtocol = mock
 
         // When
-        let getResult = await mercury.get(path: "/fail", decodeInto: DummyResponse.self)
-        let postResult = await mercury.post(path: "/fail", decodeInto: DummyResponse.self)
-        let putResult = await mercury.put(path: "/fail", decodeInto: DummyResponse.self)
-        let patchResult = await mercury.patch(path: "/fail", decodeInto: DummyResponse.self)
-        let deleteResult = await mercury.delete(path: "/fail", decodeInto: DummyResponse.self)
+        let getResult = await mercury.get(path: "/fail", decodeTo: DummyResponse.self)
+        let postResult = await mercury.post(path: "/fail", decodeTo: DummyResponse.self)
+        let putResult = await mercury.put(path: "/fail", decodeTo: DummyResponse.self)
+        let patchResult = await mercury.patch(path: "/fail", decodeTo: DummyResponse.self)
+        let deleteResult = await mercury.delete(path: "/fail", decodeTo: DummyResponse.self)
 
         // Then
         for (verb, result) in [("GET", getResult), ("POST", postResult), ("PUT", putResult), ("PATCH", patchResult), ("DELETE", deleteResult)] {

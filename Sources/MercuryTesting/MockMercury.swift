@@ -68,7 +68,7 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         method: MercuryMethod,
         path: String,
         error: MercuryError,
-        decodeInto: T.Type,
+        decodeTo: T.Type,
         delay: TimeInterval = 0
     ) {
         let failure = MercuryFailure(error: error, requestString: "\(method.rawValue) \(path)")
@@ -98,9 +98,9 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await perform(.GET, path, headers, query, fragment, cachePolicy, false, decodeInto)
+        await perform(.GET, path, headers, query, fragment, cachePolicy, false, decodeTo)
     }
 
     public func post<Body: Encodable, Response: Decodable>(
@@ -110,9 +110,9 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await perform(.POST, path, headers, query, fragment, cachePolicy, body != nil, decodeInto)
+        await perform(.POST, path, headers, query, fragment, cachePolicy, body != nil, decodeTo)
     }
 
     public func put<Body: Encodable, Response: Decodable>(
@@ -122,9 +122,9 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await perform(.PUT, path, headers, query, fragment, cachePolicy, body != nil, decodeInto)
+        await perform(.PUT, path, headers, query, fragment, cachePolicy, body != nil, decodeTo)
     }
 
     public func patch<Body: Encodable, Response: Decodable>(
@@ -134,9 +134,9 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await perform(.PATCH, path, headers, query, fragment, cachePolicy, body != nil, decodeInto)
+        await perform(.PATCH, path, headers, query, fragment, cachePolicy, body != nil, decodeTo)
     }
 
     public func delete<Body: Encodable, Response: Decodable>(
@@ -146,9 +146,9 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        decodeInto: Response.Type
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await perform(.DELETE, path, headers, query, fragment, cachePolicy, body != nil, decodeInto)
+        await perform(.DELETE, path, headers, query, fragment, cachePolicy, body != nil, decodeTo)
     }
 
     // MARK: - Private
@@ -161,7 +161,7 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         _ fragment: String?,
         _ cachePolicy: URLRequest.CachePolicy?,
         _ hasBody: Bool,
-        _ decodeInto: Response.Type
+        _ decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         let call = RecordedCall(
             method: method,
