@@ -174,15 +174,6 @@ let result = await client.get(
 )
 ```
 
-**Or Keep as Binary Data:**
-
-```swift
-let result = await client.get(
-    path: "/users/123/avatar",
-    decodeTo: Data.self
-)
-```
-
 **Or simple text:**
 
 ```swift
@@ -192,7 +183,7 @@ let result = await client.get(
 )
 ```
 
-**Don't care about data returned? No problem:**
+**No decode type? No Problem, will return binary Data() by default:**
 
 ```swift
 let result = await client.post(
