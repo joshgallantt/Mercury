@@ -14,7 +14,7 @@ import Foundation
 /// - Returns a `Result` containing either a successful response (`MercurySuccess<Response>`)
 ///   or a structured failure (`MercuryFailure`)
 ///
-/// The response type must be passed explicitly using `responseType`, allowing full control
+/// The response type must be passed explicitly using `decodeInto`, allowing full control
 /// and avoiding ambiguity around Swift generic inference.
 public protocol MercuryProtocol {
 
@@ -26,7 +26,7 @@ public protocol MercuryProtocol {
     ///   - query: Optional query parameters (e.g., `["q": "inception"]`).
     ///   - fragment: Optional URL fragment (e.g., `#section`).
     ///   - cachePolicy: Optional caching behavior override. Defaults to the client’s default if `nil`.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func get<Response: Decodable>(
@@ -35,7 +35,7 @@ public protocol MercuryProtocol {
         query: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
     /// Sends a `POST` request with an optional encodable body and decodes the response.
@@ -47,7 +47,7 @@ public protocol MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func post<Body: Encodable, Response: Decodable>(
@@ -57,7 +57,7 @@ public protocol MercuryProtocol {
         query: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
     /// Sends a `PUT` request with an optional encodable body and decodes the response.
@@ -69,7 +69,7 @@ public protocol MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func put<Body: Encodable, Response: Decodable>(
@@ -79,7 +79,7 @@ public protocol MercuryProtocol {
         query: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
     /// Sends a `PATCH` request with an optional encodable body and decodes the response.
@@ -91,7 +91,7 @@ public protocol MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func patch<Body: Encodable, Response: Decodable>(
@@ -101,7 +101,7 @@ public protocol MercuryProtocol {
         query: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 
     /// Sends a `DELETE` request with an optional encodable body and decodes the response.
@@ -113,7 +113,7 @@ public protocol MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func delete<Body: Encodable, Response: Decodable>(
@@ -123,6 +123,6 @@ public protocol MercuryProtocol {
         query: [String: String]?,
         fragment: String?,
         cachePolicy: URLRequest.CachePolicy?,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure>
 }

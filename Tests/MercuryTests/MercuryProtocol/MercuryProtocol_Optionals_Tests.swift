@@ -41,7 +41,7 @@ final class MercuryProtocol_Optionals_Tests: XCTestCase {
             query: query,
             fragment: fragment,
             cachePolicy: cache,
-            responseType: DummyResponse.self
+            decodeInto: DummyResponse.self
         )
 
         // Then
@@ -69,7 +69,7 @@ final class MercuryProtocol_Optionals_Tests: XCTestCase {
         let result = await mercury.post(
             path: "/optionalsnil",
             body: Optional<DummyBody>.none,
-            responseType: DummyResponse.self
+            decodeInto: DummyResponse.self
         )
 
         // Then

@@ -36,7 +36,7 @@ final class MockMercuryTests: XCTestCase {
         mock.stubGet(path: "/users/1", response: user)
 
         // When
-        let result = await mock.get(path: "/users/1", responseType: User.self)
+        let result = await mock.get(path: "/users/1", decodeInto: User.self)
 
         // Then
         XCTAssertTrue(mock.wasCalled(method: .GET, path: "/users/1"))
@@ -58,7 +58,7 @@ final class MockMercuryTests: XCTestCase {
         mock.stubPost(path: "/users", response: newUser)
 
         // When
-        let result = await mock.post(path: "/users", body: nil as User?, responseType: User.self)
+        let result = await mock.post(path: "/users", body: nil as User?, decodeInto: User.self)
 
         // Then
         XCTAssertTrue(mock.wasCalled(method: .POST, path: "/users"))
@@ -79,9 +79,9 @@ final class MockMercuryTests: XCTestCase {
         mock.stubDelete(path: "/users/3", response: updatedUser)
 
         // When
-        let putResult = await mock.put(path: "/users/3", body: updatedUser, responseType: User.self)
-        let patchResult = await mock.patch(path: "/users/3", body: updatedUser, responseType: User.self)
-        let deleteResult = await mock.delete(path: "/users/3", body: updatedUser, responseType: User.self)
+        let putResult = await mock.put(path: "/users/3", body: updatedUser, decodeInto: User.self)
+        let patchResult = await mock.patch(path: "/users/3", body: updatedUser, decodeInto: User.self)
+        let deleteResult = await mock.delete(path: "/users/3", body: updatedUser, decodeInto: User.self)
 
         // Then
         switch putResult {
@@ -103,10 +103,10 @@ final class MockMercuryTests: XCTestCase {
 
     func test_givenStubbedFailure_whenCalled_thenReturnsFailure_andRecordsCall() async {
         // Given
-        mock.stubFailure(method: .GET, path: "/fail", error: .server(statusCode: 500, data: nil), responseType: User.self)
+        mock.stubFailure(method: .GET, path: "/fail", error: .server(statusCode: 500, data: nil), decodeInto: User.self)
 
         // When
-        let result = await mock.get(path: "/fail", responseType: User.self)
+        let result = await mock.get(path: "/fail", decodeInto: User.self)
 
         // Then
         XCTAssertTrue(mock.wasCalled(method: .GET, path: "/fail"))
@@ -124,7 +124,7 @@ final class MockMercuryTests: XCTestCase {
 
     func test_givenNoStub_whenCalled_thenReturnsInvalidURLFailure() async {
         // When
-        let result = await mock.get(path: "/notstubbed", responseType: User.self)
+        let result = await mock.get(path: "/notstubbed", decodeInto: User.self)
 
         // Then
         switch result {
@@ -147,8 +147,8 @@ final class MockMercuryTests: XCTestCase {
         mock.stubGet(path: "/users/2", response: bob)
 
         // When
-        let aliceResult = await mock.get(path: "/users/1", responseType: User.self)
-        let bobResult = await mock.get(path: "/users/2", responseType: User.self)
+        let aliceResult = await mock.get(path: "/users/1", decodeInto: User.self)
+        let bobResult = await mock.get(path: "/users/2", decodeInto: User.self)
 
         // Then
         switch (aliceResult, bobResult) {
@@ -167,7 +167,7 @@ final class MockMercuryTests: XCTestCase {
 
         // When
         let start = Date()
-        _ = await mock.get(path: "/delayed", responseType: User.self)
+        _ = await mock.get(path: "/delayed", decodeInto: User.self)
         let elapsed = Date().timeIntervalSince(start)
 
         // Then
@@ -182,7 +182,7 @@ final class MockMercuryTests: XCTestCase {
         mock.stubGet(path: "/dup", response: second)
 
         // When
-        let result = await mock.get(path: "/dup", responseType: User.self)
+        let result = await mock.get(path: "/dup", decodeInto: User.self)
 
         // Then
         switch result {
@@ -201,8 +201,8 @@ final class MockMercuryTests: XCTestCase {
         mock.stubPost(path: "/b", response: b)
 
         // When
-        _ = await mock.get(path: "/a", responseType: User.self)
-        _ = await mock.post(path: "/b", body: nil as User?, headers: ["X-Test": "1"], responseType: User.self)
+        _ = await mock.get(path: "/a", decodeInto: User.self)
+        _ = await mock.post(path: "/b", body: nil as User?, headers: ["X-Test": "1"], decodeInto: User.self)
 
         // Then
         let calls = mock.recordedCalls
@@ -218,7 +218,7 @@ final class MockMercuryTests: XCTestCase {
         // Given
         let user = User(id: 9, name: "Temp")
         mock.stubGet(path: "/reset", response: user)
-        _ = await mock.get(path: "/reset", responseType: User.self)
+        _ = await mock.get(path: "/reset", decodeInto: User.self)
         XCTAssertTrue(mock.wasCalled(method: .GET, path: "/reset"))
 
         // When
@@ -227,7 +227,7 @@ final class MockMercuryTests: XCTestCase {
         // Then
         XCTAssertEqual(mock.recordedCalls.count, 0)
         XCTAssertFalse(mock.wasCalled(method: .GET, path: "/reset"))
-        let result = await mock.get(path: "/reset", responseType: User.self)
+        let result = await mock.get(path: "/reset", decodeInto: User.self)
         switch result {
         case .success:
             XCTFail("Expected failure after reset")

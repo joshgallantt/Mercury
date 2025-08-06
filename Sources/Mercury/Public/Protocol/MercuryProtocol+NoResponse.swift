@@ -35,7 +35,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
     
@@ -65,7 +65,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
     
@@ -78,7 +78,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing raw data and metadata, or a failure.
     func patch<Body: Encodable>(
@@ -96,7 +96,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
     
@@ -109,7 +109,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing raw data and metadata, or a failure.
     func delete<Body: Encodable>(
@@ -127,7 +127,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
 }

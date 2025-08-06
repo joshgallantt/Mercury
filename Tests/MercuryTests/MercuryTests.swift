@@ -54,7 +54,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/api/test", responseType: String.self)
+        let result = await client.get(path: "/api/test", decodeInto: String.self)
 
         // Then
         switch result {
@@ -76,7 +76,7 @@ final class MercuryTests: XCTestCase {
         let body = User(name: "John", id: 123)
 
         // When
-        let result = await client.post(path: "/users", body: body, responseType: User.self)
+        let result = await client.post(path: "/users", body: body, decodeInto: User.self)
 
         // Then
         switch result {
@@ -98,7 +98,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/api/missing", responseType: Data.self)
+        let result = await client.get(path: "/api/missing", decodeInto: Data.self)
 
         // Then
         switch result {
@@ -123,7 +123,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/api/test", responseType: Data.self)
+        let result = await client.get(path: "/api/test", decodeInto: Data.self)
 
         // Then
         switch result {
@@ -146,7 +146,7 @@ final class MercuryTests: XCTestCase {
         let client = Mercury(host: "", session: session)
 
         // When
-        let result = await client.get(path: "/path", responseType: Data.self)
+        let result = await client.get(path: "/path", decodeInto: Data.self)
 
         // Then
         switch result {
@@ -172,7 +172,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/api/test", responseType: Data.self)
+        let result = await client.get(path: "/api/test", decodeInto: Data.self)
 
         // Then
         switch result {
@@ -199,7 +199,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.post(path: "/encode", body: Bad(), responseType: Data.self)
+        let result = await client.post(path: "/encode", body: Bad(), decodeInto: Data.self)
 
         // Then
         switch result {
@@ -225,7 +225,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/missing-key", responseType: Person.self)
+        let result = await client.get(path: "/missing-key", decodeInto: Person.self)
         
         // Then
         switch result {
@@ -255,9 +255,9 @@ final class MercuryTests: XCTestCase {
 
         // When/Then - Test all HTTP methods
         for (method, call) in [
-            ("PUT", await client.put(path: "/resource", body: response, responseType: Response.self)),
-            ("PATCH", await client.patch(path: "/resource", body: response, responseType: Response.self)),
-            ("DELETE", await client.delete(path: "/resource", body: response, responseType: Response.self))
+            ("PUT", await client.put(path: "/resource", body: response, decodeInto: Response.self)),
+            ("PATCH", await client.patch(path: "/resource", body: response, decodeInto: Response.self)),
+            ("DELETE", await client.delete(path: "/resource", body: response, decodeInto: Response.self))
         ] {
             switch call {
             case .success(let success):
@@ -288,7 +288,7 @@ final class MercuryTests: XCTestCase {
             headers: ["X-Custom": "custom"],
             query: ["q": "test", "limit": "10"],
             fragment: "section",
-            responseType: Data.self
+            decodeInto: Data.self
         )
 
         // Then
@@ -315,7 +315,7 @@ final class MercuryTests: XCTestCase {
         }
 
         // When
-        _ = await client.get(path: "/resource", responseType: Data.self)
+        _ = await client.get(path: "/resource", decodeInto: Data.self)
 
         // Then
         XCTAssertTrue(capturedURL?.absoluteString.contains(":8080") == true)
@@ -332,7 +332,7 @@ final class MercuryTests: XCTestCase {
         // When
         var signatures = Set<String>()
         for _ in 0..<3 {
-            let result = await client.get(path: "/stable", responseType: Data.self)
+            let result = await client.get(path: "/stable", decodeInto: Data.self)
             if case .success(let success) = result {
                 signatures.insert(success.requestSignature)
             }
@@ -349,8 +349,8 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result1 = await client.get(path: "/a", headers: ["X": "1"], responseType: Data.self)
-        let result2 = await client.get(path: "/b", headers: ["X": "2"], responseType: Data.self)
+        let result1 = await client.get(path: "/a", headers: ["X": "1"], decodeInto: Data.self)
+        let result2 = await client.get(path: "/b", headers: ["X": "2"], decodeInto: Data.self)
 
         // Then
         var sig1 = "", sig2 = ""
@@ -369,7 +369,7 @@ final class MercuryTests: XCTestCase {
         let result = await client.get(
             path: "/users/123",
             headers: ["Accept": "application/json"],
-            responseType: Data.self
+            decodeInto: Data.self
         )
         
         // Then
@@ -416,7 +416,7 @@ final class MercuryTests: XCTestCase {
         }
 
         // When
-        _ = await client.get(path: "/headers", headers: ["headerA": "Override", "HeaderB": "CustomB"], responseType: Data.self)
+        _ = await client.get(path: "/headers", headers: ["headerA": "Override", "HeaderB": "CustomB"], decodeInto: Data.self)
 
         // Then: Custom should override, and casing should match custom
         XCTAssertEqual(requestHeaders?["headerA"], "Override")
@@ -454,7 +454,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/raw", responseType: Data.self)
+        let result = await client.get(path: "/raw", decodeInto: Data.self)
 
         // Then
         switch result {
@@ -472,7 +472,7 @@ final class MercuryTests: XCTestCase {
         let client = makeClient(session: session)
 
         // When
-        let result = await client.get(path: "/string", responseType: String.self)
+        let result = await client.get(path: "/string", decodeInto: String.self)
 
         // Then
         switch result {

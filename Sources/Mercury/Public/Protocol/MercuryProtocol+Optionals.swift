@@ -17,7 +17,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters (e.g., `["q": "inception"]`).
     ///   - fragment: Optional URL fragment (e.g., `#section`).
     ///   - cachePolicy: Optional caching behavior override. Defaults to the client's default if `nil`.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func get<Response: Decodable>(
@@ -26,7 +26,7 @@ public extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await get(
             path: path,
@@ -34,7 +34,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: responseType
+            decodeInto: decodeInto
         )
     }
     
@@ -49,7 +49,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func post<Body: Encodable, Response: Decodable>(
@@ -59,7 +59,7 @@ public extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await post(
             path: path,
@@ -68,7 +68,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: responseType
+            decodeInto: decodeInto
         )
     }
     
@@ -83,7 +83,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func put<Body: Encodable, Response: Decodable>(
@@ -93,7 +93,7 @@ public extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await put(
             path: path,
@@ -102,7 +102,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: responseType
+            decodeInto: decodeInto
         )
     }
     
@@ -117,7 +117,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func patch<Body: Encodable, Response: Decodable>(
@@ -127,7 +127,7 @@ public extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await patch(
             path: path,
@@ -136,7 +136,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: responseType
+            decodeInto: decodeInto
         )
     }
     
@@ -151,7 +151,7 @@ public extension MercuryProtocol {
     ///   - query: Optional query parameters to include in the URL.
     ///   - fragment: Optional URL fragment.
     ///   - cachePolicy: Optional caching behavior override.
-    ///   - responseType: The expected `Decodable` response type.
+    ///   - decodeInto: The expected `Decodable` response type.
     ///
     /// - Returns: A result containing the decoded response and metadata, or a failure.
     func delete<Body: Encodable, Response: Decodable>(
@@ -161,7 +161,7 @@ public extension MercuryProtocol {
         query: [String: String]? = nil,
         fragment: String? = nil,
         cachePolicy: URLRequest.CachePolicy? = nil,
-        responseType: Response.Type
+        decodeInto: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         await delete(
             path: path,
@@ -170,7 +170,7 @@ public extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: responseType
+            decodeInto: decodeInto
         )
     }
 }

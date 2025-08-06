@@ -32,7 +32,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
     
@@ -60,7 +60,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
 
@@ -88,7 +88,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
 
@@ -116,7 +116,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
 
@@ -144,7 +144,7 @@ extension MercuryProtocol {
             query: query,
             fragment: fragment,
             cachePolicy: cachePolicy,
-            responseType: Data.self
+            decodeInto: Data.self
         )
     }
 }
