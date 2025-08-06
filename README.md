@@ -429,6 +429,7 @@ Mercury is available under the MIT License. See the [LICENSE](./LICENSE) file fo
 ---
 
 <div align="center">
-  By Josh Gallant  
+  By Josh Gallant 
+  <br> 
   Made with ❤️ for the Swift community
 </div>
