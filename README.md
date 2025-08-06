@@ -236,16 +236,16 @@ case .success(let success):
     let signature = success.requestSignature
 
     print("Status Code: \(httpResponse.statusCode)")
-    // Console: Status Code: 200
+    // Status Code: 200
 
     print("Headers: \(httpResponse.allHeaderFields)")
-    // Console: Headers: ["Content-Type": "application/json", "X-Request-ID": "abcd-efgh"]
+    // Headers: ["Content-Type": "application/json", "X-Request-ID": "abcd-efgh"]
 
     print("Request String: \(requestString)")
-    // Console: Request String: GET|https://api.example.com/v1/users/123|headers:accept:application/json&content-type:application/json
+    // Request String: GET|https://api.example.com/v1/users/123|headers:accept:application/json&content-type:application/json
 
     print("Request Signature: \(signature)")
-    // Console: Request Signature: 2ca7f2481a7d7d4e31ad24bb3fbb13d79e531c55a5a44af8a1b7d1c8f2a3ea8a
+    // Request Signature: 2ca7f2481a7d7d4e31ad24bb3fbb13d79e531c55a5a44af8a1b7d1c8f2a3ea8a
 ```
 
 **On failure:**
@@ -256,10 +256,10 @@ case .failure(let failure):
     // Console: Error: 404 Not Found
 
     print("Request String: \(failure.requestString)")
-    // Console: Request String: GET|https://api.example.com/v1/users/999|headers:accept:application/json&content-type:application/json
+    // Request String: GET|https://api.example.com/v1/users/999|headers:accept:application/json&content-type:application/json
 
     print("Request Signature: \(failure.requestSignature)")
-    // Console: Request Signature: 6d967252b5e347e612fb7caa0cbe0b6318d07db96902d2a2b7e1f804012debc2
+    // Request Signature: 6d967252b5e347e612fb7caa0cbe0b6318d07db96902d2a2b7e1f804012debc2
 ```
 > [!TIP]
 > Request signatures are deterministic SHA256 hashes, great for debugging, caching, and logging.
@@ -302,14 +302,13 @@ case .success(let success):
     // Console: Got user: John Doe
 
 case .failure(let failure):
-    // Simple, descriptive error messages:
     print("Request failed: \(failure)")
     /*
     // Console example outputs:
-    Request failed: Decoding failed in 'User' for key 'email': keyNotFound(CodingKeys(stringValue: "email", ...), ...)
+    Request failed: Decoding failed in 'User' for key 'email'
     Request failed: 401 Unauthorized: Invalid API token
     Request failed: 404 Not Found
-    Request failed: Transport error: The Internet connection appears to be offline
+    Request failed: Transport error: Lost Connection
     */
 }
 ```
