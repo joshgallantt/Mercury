@@ -13,6 +13,7 @@
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
 [![Coverage](https://img.shields.io/badge/Coverage-98.4%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Size](https://img.shields.io/badge/Package_Size-1.5MB-purple.svg?style=flat-square)](#)
 
 </div>
 
