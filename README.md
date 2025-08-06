@@ -45,7 +45,7 @@ Add Mercury to your project with [Swift Package Manager](https://swift.org/packa
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/joshgallantt/Mercury.git", from: "1.0.0")
+    .package(url: "https://github.com/joshgallantt/Mercury.git", from: "2.0.0")
 ]
 ```
 
