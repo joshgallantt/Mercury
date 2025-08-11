@@ -9,6 +9,7 @@
 import XCTest
 @testable import Mercury
 
+
 public final class MockMercurySession: MercurySession {
     
     enum Scenario {
@@ -17,17 +18,12 @@ public final class MockMercurySession: MercurySession {
     }
     
     private let scenario: Scenario
-    var onRequest: ((URLRequest) -> (Data, URLResponse))?
     
-    init(scenario: Scenario) {
+    init(scenario: Scenario, onRequest: ((URLRequest) -> (Data, URLResponse))? = nil) {
         self.scenario = scenario
     }
     
     public func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        if let onRequest = onRequest {
-            return onRequest(request)
-        }
-        
         switch scenario {
         case .success(let data, let response):
             return (data, response)

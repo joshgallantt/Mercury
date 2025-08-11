@@ -10,7 +10,7 @@ import Foundation
 /// Represents the caching strategy used by Mercury networking clients.
 ///
 /// - Note: The default values are optimized for general usage, but can be adjusted to fit specific application needs.
-public enum MercuryCache: Equatable {
+public enum MercuryCache: Equatable, Sendable {
     /// Uses the system's shared `URLCache` instance.
     ///
     /// - Important: The cache is global and shared across the process, not isolated to the Mercury client.

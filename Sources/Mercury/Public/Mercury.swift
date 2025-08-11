@@ -133,6 +133,215 @@ public struct Mercury: MercuryProtocol {
         urlCache?.removeAllCachedResponses()
     }
     
+    // MARK: - Request Building
+    
+    /// Builds a MercuryRequest without validation
+    public func buildRequest<Body: Encodable>(
+        method: MercuryMethod,
+        path: String,
+        body: Body? = nil,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil
+    ) throws -> MercuryRequest {
+
+        let bodyData: Data?
+        if let body = body {
+            do {
+                bodyData = try JSONEncoder().encode(body)
+            } catch {
+                throw MercuryError.encoding(error)
+            }
+        } else {
+            bodyData = nil
+        }
+        
+        // Merge headers
+        let finalHeaders = mergeHeaders(headers)
+        
+        // Build full path
+        let fullPath = buildFullPath(path)
+        
+        // Create request object
+        return MercuryRequest(
+            method: method,
+            scheme: scheme,
+            host: host,
+            port: port,
+            path: fullPath,
+            headers: finalHeaders,
+            query: query,
+            fragment: fragment,
+            body: bodyData,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
+    }
+    
+    /// Convenience builder for GET requests
+    public func buildGet(
+        path: String,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil
+    ) throws -> MercuryRequest {
+        try buildRequest(
+            method: .GET,
+            path: path,
+            body: nil as MercuryEmptyBody?,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy
+        )
+    }
+    
+    /// Convenience builder for POST requests
+    public func buildPost<Body: Encodable>(
+        path: String,
+        body: Body? = nil,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil
+    ) throws -> MercuryRequest {
+        try buildRequest(
+            method: .POST,
+            path: path,
+            body: body,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy
+        )
+    }
+    
+    /// Convenience builder for PUT requests
+    public func buildPut<Body: Encodable>(
+        path: String,
+        body: Body? = nil,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil
+    ) throws -> MercuryRequest {
+        try buildRequest(
+            method: .PUT,
+            path: path,
+            body: body,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy
+        )
+    }
+    
+    /// Convenience builder for PATCH requests
+    public func buildPatch<Body: Encodable>(
+        path: String,
+        body: Body? = nil,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil
+    ) throws -> MercuryRequest {
+        try buildRequest(
+            method: .PATCH,
+            path: path,
+            body: body,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy
+        )
+    }
+    
+    /// Convenience builder for DELETE requests
+    public func buildDelete<Body: Encodable>(
+        path: String,
+        body: Body? = nil,
+        headers: [String: String]? = nil,
+        query: [String: String]? = nil,
+        fragment: String? = nil,
+        cachePolicy: URLRequest.CachePolicy? = nil
+    ) throws -> MercuryRequest {
+        try buildRequest(
+            method: .DELETE,
+            path: path,
+            body: body,
+            headers: headers,
+            query: query,
+            fragment: fragment,
+            cachePolicy: cachePolicy
+        )
+    }
+    
+    // MARK: - Request Execution
+    
+    /// Executes a pre-built MercuryRequest
+    public func execute<Response: Decodable>(
+        _ request: MercuryRequest,
+        decodeTo: Response.Type
+    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        
+        guard !request.host.isEmpty else {
+            return .failure(MercuryFailure(
+                error: .invalidURL,
+                requestString: request.string,
+                requestSignature: request.signature
+            ))
+        }
+        
+        
+        // Build URL from request components
+        var components = URLComponents()
+        components.scheme = request.scheme
+        components.host = request.host
+        components.port = request.port
+        components.path = request.path
+        components.queryItems = buildQueryItems(from: request.query)
+        components.fragment = request.fragment
+        
+        guard let url = components.url else {
+            return .failure(MercuryFailure(
+                error: .invalidURL,
+                requestString: request.string,
+                requestSignature: request.hash
+            ))
+        }
+        
+        // Build URLRequest
+        var urlRequest = URLRequest(
+            url: url,
+            cachePolicy: request.cachePolicy,
+            timeoutInterval: 60
+        )
+        urlRequest.httpMethod = request.method.rawValue
+        urlRequest.allHTTPHeaderFields = request.headers
+        urlRequest.httpBody = request.body
+        
+        // Execute the request
+        let networkResult = await executeRequest(urlRequest)
+        
+        // Handle response
+        return result(
+            networkResult: networkResult,
+            decodeTo: decodeTo,
+            requestString: request.string,
+            requestSignature: request.signature
+        )
+    }
+    
+    /// Executes a pre-built MercuryRequest returning raw Data
+    public func execute(
+        _ request: MercuryRequest
+    ) async -> Result<MercurySuccess<Data>, MercuryFailure> {
+        await execute(request, decodeTo: Data.self)
+    }
+    
+    // MARK: - Protocol Implementation (Backwards Compatibility)
+    
     public func get<Response: Decodable>(
         path: String,
         headers: [String: String]? = nil,
@@ -141,17 +350,34 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy? = nil,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await performRequest(
-            method: .GET,
-            path: path,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy,
-            body: nil as Data?,
-            decodeTo: decodeTo
-        )
+        do {
+            let request = try buildGet(
+                path: path,
+                headers: headers,
+                query: query,
+                fragment: fragment,
+                cachePolicy: cachePolicy
+            )
+            return await execute(request, decodeTo: decodeTo)
+        } catch let error as MercuryError {
+            return .failure(
+                MercuryFailure(
+                    error: error,
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        } catch {
+            return .failure(
+                MercuryFailure(
+                    error: .transport(error),
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        }
     }
+
     
     public func post<Body: Encodable, Response: Decodable>(
         path: String,
@@ -162,17 +388,35 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy? = nil,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await performRequest(
-            method: .POST,
-            path: path,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy,
-            body: body,
-            decodeTo: decodeTo
-        )
+        do {
+            let request = try buildPost(
+                path: path,
+                body: body,
+                headers: headers,
+                query: query,
+                fragment: fragment,
+                cachePolicy: cachePolicy
+            )
+            return await execute(request, decodeTo: decodeTo)
+        } catch let error as MercuryError {
+            return .failure(
+                MercuryFailure(
+                    error: error,
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        } catch {
+            return .failure(
+                MercuryFailure(
+                    error: .transport(error),
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        }
     }
+
     
     public func put<Body: Encodable, Response: Decodable>(
         path: String,
@@ -183,18 +427,35 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy? = nil,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await performRequest(
-            method: .PUT,
-            path: path,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy,
-            body: body,
-            decodeTo: decodeTo
-        )
+        do {
+            let request = try buildPut(
+                path: path,
+                body: body,
+                headers: headers,
+                query: query,
+                fragment: fragment,
+                cachePolicy: cachePolicy
+            )
+            return await execute(request, decodeTo: decodeTo)
+        } catch let error as MercuryError {
+            return .failure(
+                MercuryFailure(
+                    error: error,
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        } catch {
+            return .failure(
+                MercuryFailure(
+                    error: .transport(error),
+                    requestString: "PUT \(path)",
+                    requestSignature: ""
+                )
+            )
+        }
     }
-    
+
     public func patch<Body: Encodable, Response: Decodable>(
         path: String,
         body: Body?,
@@ -204,18 +465,35 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy? = nil,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await performRequest(
-            method: .PATCH,
-            path: path,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy,
-            body: body,
-            decodeTo: decodeTo
-        )
+        do {
+            let request = try buildPatch(
+                path: path,
+                body: body,
+                headers: headers,
+                query: query,
+                fragment: fragment,
+                cachePolicy: cachePolicy
+            )
+            return await execute(request, decodeTo: decodeTo)
+        } catch let error as MercuryError {
+            return .failure(
+                MercuryFailure(
+                    error: error,
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        } catch {
+            return .failure(
+                MercuryFailure(
+                    error: .transport(error),
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        }
     }
-    
+
     public func delete<Body: Encodable, Response: Decodable>(
         path: String,
         body: Body?,
@@ -225,16 +503,33 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy? = nil,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        await performRequest(
-            method: .DELETE,
-            path: path,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy,
-            body: body,
-            decodeTo: decodeTo
-        )
+        do {
+            let request = try buildDelete(
+                path: path,
+                body: body,
+                headers: headers,
+                query: query,
+                fragment: fragment,
+                cachePolicy: cachePolicy
+            )
+            return await execute(request, decodeTo: decodeTo)
+        } catch let error as MercuryError {
+            return .failure(
+                MercuryFailure(
+                    error: error,
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        } catch {
+            return .failure(
+                MercuryFailure(
+                    error: .transport(error),
+                    requestString: "",
+                    requestSignature: ""
+                )
+            )
+        }
     }
     
     // MARK: - Private Implementation
@@ -252,72 +547,6 @@ public struct Mercury: MercuryProtocol {
         }
     }
     
-    private func performRequest<Body: Encodable, Response: Decodable>(
-        method: MercuryMethod,
-        path: String,
-        headers: [String: String]?,
-        query: [String: String]?,
-        fragment: String?,
-        cachePolicy: URLRequest.CachePolicy?,
-        body: Body?,
-        decodeTo: Response.Type
-    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        // Step 1: Validate host
-        guard !host.isEmpty else {
-            return .failure(MercuryFailure(error: .invalidURL, requestString: ""))
-        }
-        
-        // Step 2: Build URL
-        guard let url = buildURL(path: path, query: query, fragment: fragment) else {
-            return .failure(MercuryFailure(error: .invalidURL, requestString: ""))
-        }
-        
-        // Step 3: Encode body only if present
-        var bodyData: Data? = nil
-        if let body {
-            switch encodeBody(body) {
-            case .success(let data):
-                bodyData = data
-            case .failure(let error):
-                return .failure(MercuryFailure(error: error, requestString: ""))
-            }
-        }
-        
-        // Step 4: Build request
-        let request = buildRequest(
-            url: url,
-            method: method,
-            headers: headers,
-            body: bodyData,
-            cachePolicy: cachePolicy
-        )
-        
-        // Step 5: Generate signature
-        let requestString = generateCanonicalRequestString(for: request)
-        
-        // Step 6: Execute request
-        let networkResult = await executeRequest(request)
-        
-        // Step 7: Handle response
-        return result(
-            networkResult: networkResult,
-            decodeTo: decodeTo,
-            requestString: requestString
-        )
-    }
-    
-    private func buildURL(path: String, query: [String: String]?, fragment: String?) -> URL? {
-        var components = URLComponents()
-        components.scheme = scheme
-        components.host = host
-        components.port = port
-        components.path = buildFullPath(path)
-        components.queryItems = buildQueryItems(from: query)
-        components.fragment = fragment
-        
-        return components.url
-    }
-    
     internal func buildFullPath(_ path: String) -> String {
         let cleanBasePath = basePath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let cleanPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
@@ -331,29 +560,6 @@ public struct Mercury: MercuryProtocol {
     internal func buildQueryItems(from query: [String: String]?) -> [URLQueryItem]? {
         guard let query = query, !query.isEmpty else { return nil }
         return query.map { URLQueryItem(name: $0.key, value: $0.value) }
-    }
-    
-    private func buildRequest(
-        url: URL,
-        method: MercuryMethod,
-        headers: [String: String]?,
-        body: Data?,
-        cachePolicy: URLRequest.CachePolicy?
-    ) -> URLRequest {
-        var request = URLRequest(
-            url: url,
-            cachePolicy: cachePolicy ?? defaultCachePolicy,
-            timeoutInterval: 60
-        )
-        
-        request.httpMethod = method.rawValue
-        request.allHTTPHeaderFields = mergeHeaders(headers)
-        
-        if let body {
-            request.httpBody = body
-        }
-        
-        return request
     }
     
     private func mergeHeaders(_ customHeaders: [String: String]?) -> [String: String] {
@@ -390,18 +596,26 @@ public struct Mercury: MercuryProtocol {
     private func result<Response: Decodable>(
         networkResult: Result<(Data, HTTPURLResponse), MercuryError>,
         decodeTo: Response.Type,
-        requestString: String
+        requestString: String,
+        requestSignature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         switch networkResult {
         case .failure(let error):
-            return .failure(MercuryFailure(error: error, requestString: requestString))
+            return .failure(
+                MercuryFailure(
+                    error: error,
+                    requestString: requestString,
+                    requestSignature: requestSignature
+                )
+            )
             
         case .success(let (data, httpResponse)):
             return processResponse(
                 data: data,
                 httpResponse: httpResponse,
                 decodeTo: decodeTo,
-                signature: requestString
+                requestString: requestString,
+                requestSignature: requestSignature
             )
         }
     }
@@ -410,7 +624,8 @@ public struct Mercury: MercuryProtocol {
         data: Data,
         httpResponse: HTTPURLResponse,
         decodeTo: Response.Type,
-        signature: String
+        requestString: String,
+        requestSignature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         
         if (200...299).contains(httpResponse.statusCode) {
@@ -418,7 +633,8 @@ public struct Mercury: MercuryProtocol {
                 data: data,
                 httpResponse: httpResponse,
                 decodeTo: decodeTo,
-                signature: signature
+                requestString: requestString,
+                requestSignature: requestSignature
             )
         }
 
@@ -429,7 +645,8 @@ public struct Mercury: MercuryProtocol {
                     data: data
                 ),
                 httpResponse: httpResponse,
-                requestString: signature
+                requestString: requestString,
+                requestSignature: requestSignature
             )
         )
     }
@@ -438,7 +655,8 @@ public struct Mercury: MercuryProtocol {
         data: Data,
         httpResponse: HTTPURLResponse,
         decodeTo: Response.Type,
-        signature: String
+        requestString: String,
+        requestSignature: String
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         do {
             // Handle Data.self
@@ -446,7 +664,8 @@ public struct Mercury: MercuryProtocol {
                 return .success(MercurySuccess(
                     value: value,
                     httpResponse: httpResponse,
-                    requestString: signature
+                    requestString: requestString,
+                    requestSignature: requestSignature
                 ))
             }
             
@@ -455,7 +674,8 @@ public struct Mercury: MercuryProtocol {
                 return .success(MercurySuccess(
                     value: value,
                     httpResponse: httpResponse,
-                    requestString: signature
+                    requestString: requestString,
+                    requestSignature: requestSignature
                 ))
             }
             
@@ -465,7 +685,8 @@ public struct Mercury: MercuryProtocol {
                 MercurySuccess(
                     value: decoded,
                     httpResponse: httpResponse,
-                    requestString: signature
+                    requestString: requestString,
+                    requestSignature: requestSignature
                 )
             )
         } catch {
@@ -477,7 +698,8 @@ public struct Mercury: MercuryProtocol {
                         key: keyPath,
                         underlyingError: error
                     ),
-                    requestString: signature
+                    requestString: requestString,
+                    requestSignature: requestSignature
                 )
             )
         }
@@ -506,31 +728,4 @@ public struct Mercury: MercuryProtocol {
     private func buildKeyPath(_ path: [CodingKey]) -> String {
         path.map { $0.stringValue }.joined(separator: ".")
     }
-    
-    internal func generateCanonicalRequestString(for request: URLRequest) -> String {
-        var components: [String] = []
-        
-        // Add method
-        components.append(request.httpMethod ?? "GET")
-        
-        // Add URL
-        if let url = request.url?.absoluteString {
-            components.append(url)
-        }
-        
-        // Add headers if present
-        if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
-            components.append("headers:\(canonicalizeHeaders(headers))")
-        }
-        
-        return components.joined(separator: "|")
-    }
-    
-    private func canonicalizeHeaders(_ headers: [String: String]) -> String {
-        headers
-            .sorted { $0.key.lowercased() < $1.key.lowercased() }
-            .map { "\($0.key.lowercased()):\($0.value)" }
-            .joined(separator: "&")
-    }
 }
-

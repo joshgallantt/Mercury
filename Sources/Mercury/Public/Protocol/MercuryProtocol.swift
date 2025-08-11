@@ -16,7 +16,7 @@ import Foundation
 ///
 /// The response type must be passed explicitly using `decodeTo`, allowing full control
 /// and avoiding ambiguity around Swift generic inference.
-public protocol MercuryProtocol {
+public protocol MercuryProtocol: Sendable {
 
     /// Sends a `GET` request and decodes the response into the specified type.
     ///

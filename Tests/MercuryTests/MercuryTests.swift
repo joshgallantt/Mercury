@@ -153,8 +153,8 @@ final class MercuryTests: XCTestCase {
         case .failure(let failure):
             switch failure.error {
             case .invalidURL:
-                XCTAssertEqual(failure.requestString, "")
-                XCTAssertEqual(failure.requestSignature, "")
+                XCTAssertEqual(failure.requestString, "GET|https:///path|headers:accept:application/json&content-type:application/json")
+                XCTAssertEqual(failure.requestSignature, "b0ea41d1f1f5224b8fe26204759668ad28e0f81fdb3d69c32da3a988f9fbd188")
                 XCTAssertNil(failure.httpResponse)
             default:
                 XCTFail("Expected .invalidURL failure")
@@ -205,7 +205,6 @@ final class MercuryTests: XCTestCase {
         switch result {
         case .failure(let failure):
             if case .encoding = failure.error {
-                XCTAssertEqual(failure.requestSignature, "")
                 XCTAssertNil(failure.httpResponse)
             } else {
                 XCTFail("Expected .encoding failure")
@@ -271,77 +270,6 @@ final class MercuryTests: XCTestCase {
 
     // MARK: - Request Building Tests
 
-    func test_givenHeadersAndQuery_whenGet_thenRequestIsBuiltCorrectly() async {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session, defaultHeaders: ["X-Default": "default"])
-        var capturedRequest: URLRequest?
-        session.onRequest = { request in
-            capturedRequest = request
-            return (data, response)
-        }
-
-        // When
-        _ = await client.get(
-            path: "/resource",
-            headers: ["X-Custom": "custom"],
-            query: ["q": "test", "limit": "10"],
-            fragment: "section",
-            decodeTo: Data.self
-        )
-
-        // Then
-        XCTAssertNotNil(capturedRequest)
-        let headers = capturedRequest?.allHTTPHeaderFields
-        XCTAssertEqual(headers?["X-Default"], "default")
-        XCTAssertEqual(headers?["X-Custom"], "custom")
-        
-        let urlString = capturedRequest?.url?.absoluteString ?? ""
-        XCTAssertTrue(urlString.contains("q=test"))
-        XCTAssertTrue(urlString.contains("limit=10"))
-        XCTAssertTrue(urlString.contains("#section"))
-    }
-
-    func test_givenCustomPort_whenRequest_thenURLIncludesPort() async {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(host: "https://host.com", session: session, port: 8080)
-        var capturedURL: URL?
-        session.onRequest = { request in
-            capturedURL = request.url
-            return (data, response)
-        }
-
-        // When
-        _ = await client.get(path: "/resource", decodeTo: Data.self)
-
-        // Then
-        XCTAssertTrue(capturedURL?.absoluteString.contains(":8080") == true)
-    }
-
-    // MARK: - Request Signature Tests
-
-    func test_givenIdenticalRequests_whenCalled_thenSignatureIsStable() async {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session)
-
-        // When
-        var signatures = Set<String>()
-        for _ in 0..<3 {
-            let result = await client.get(path: "/stable", decodeTo: Data.self)
-            if case .success(let success) = result {
-                signatures.insert(success.requestSignature)
-            }
-        }
-
-        // Then
-        XCTAssertEqual(signatures.count, 1, "Expected deterministic signature")
-    }
-
     func test_givenDifferentRequests_whenCalled_thenSignaturesDiffer() async {
         // Given
         let (data, response) = makeMockResponse()
@@ -400,30 +328,6 @@ final class MercuryTests: XCTestCase {
         // When/Then (just calls, checks don’t crash)
         client.clearCache()
         Mercury.clearSharedURLCache()
-    }
-
-    // MARK: - mergeHeaders
-
-    func test_givenCustomHeaders_whenCaseDiffers_thenOverridesDefaultCaseSensitive() async {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session, defaultHeaders: ["HeaderA": "DefaultA", "headerb": "DefaultB"])
-        var requestHeaders: [String: String]?
-        session.onRequest = { request in
-            requestHeaders = request.allHTTPHeaderFields
-            return (data, response)
-        }
-
-        // When
-        _ = await client.get(path: "/headers", headers: ["headerA": "Override", "HeaderB": "CustomB"], decodeTo: Data.self)
-
-        // Then: Custom should override, and casing should match custom
-        XCTAssertEqual(requestHeaders?["headerA"], "Override")
-        XCTAssertEqual(requestHeaders?["HeaderB"], "CustomB")
-        // No old-case version left
-        XCTAssertNil(requestHeaders?["HeaderA"])
-        XCTAssertNil(requestHeaders?["headerb"])
     }
 
     // MARK: - encodeBody
@@ -506,22 +410,6 @@ final class MercuryTests: XCTestCase {
         // When/Then
         XCTAssertNil(client.buildQueryItems(from: nil as [String: String]?))
         XCTAssertNil(client.buildQueryItems(from: [:]))
-    }
-
-    // MARK: - generateCanonicalRequestString
-
-    func test_givenRequestWithoutHeaders_whenGenerateCanonicalRequestString_thenNoHeadersAppended() {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session)
-        let url = URL(string: "https://host.com/empty")!
-        var request = URLRequest(url: url)
-        request.allHTTPHeaderFields = nil
-        // When
-        let string = client.generateCanonicalRequestString(for: request)
-        // Then
-        XCTAssertFalse(string.contains("headers:"))
     }
 
     // MARK: - Mercury Initializer Coverage

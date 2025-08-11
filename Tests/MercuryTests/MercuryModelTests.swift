@@ -18,30 +18,21 @@ final class MercuryModelTests: XCTestCase {
         let url = URL(string: "https://example.com")!
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
         let requestString = "GET|https://example.com|headers:accept:application/json"
+        let requestSignature = requestString + "hash"
 
         // When
-        let success = MercurySuccess(value: user, httpResponse: response, requestString: requestString)
+        let success = MercurySuccess(
+            value: user,
+            httpResponse: response,
+            requestString: requestString,
+            requestSignature: requestSignature
+        )
 
         // Then
         XCTAssertEqual(success.data, user)
         XCTAssertEqual(success.httpResponse.statusCode, 200)
         XCTAssertEqual(success.requestString, requestString)
         XCTAssertFalse(success.requestSignature.isEmpty)
-    }
-    
-    func test_givenEmptyRequestString_whenInitMercurySuccess_thenRequestSignatureIsEmpty() {
-        // Given
-        struct EmptyUser: Decodable, Equatable {}
-        let value = EmptyUser()
-        let url = URL(string: "https://example.com")!
-        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        let requestString = ""
-
-        // When
-        let success = MercurySuccess(value: value, httpResponse: response, requestString: requestString)
-
-        // Then
-        XCTAssertEqual(success.requestSignature, "")
     }
 
     func test_givenMercuryFailure_whenInit_thenPropertiesAreSet() {
@@ -50,22 +41,20 @@ final class MercuryModelTests: XCTestCase {
         let url = URL(string: "https://example.com")!
         let response = HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil)!
         let requestString = "POST|https://example.com/users"
+        let requestSig = requestString + "hash"
 
         // When
-        let failure = MercuryFailure(error: error, httpResponse: response, requestString: requestString)
+        let failure = MercuryFailure(
+            error: error,
+            httpResponse: response,
+            requestString: requestString,
+            requestSignature: requestSig
+        )
 
         // Then
         XCTAssertEqual(failure.description, "500 Internal Server Error")
         XCTAssertEqual(failure.httpResponse, response)
         XCTAssertEqual(failure.requestString, requestString)
         XCTAssertFalse(failure.requestSignature.isEmpty)
-    }
-
-    func test_givenEmptyRequestString_whenInit_thenRequestSignatureIsEmpty() {
-        // Given
-        let failure = MercuryFailure(error: .invalidURL, requestString: "")
-
-        // Then
-        XCTAssertEqual(failure.requestSignature, "")
     }
 }

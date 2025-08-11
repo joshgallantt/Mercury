@@ -59,7 +59,16 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
             httpVersion: "HTTP/1.1",
             headerFields: headers
         )!
-        let result = MercurySuccess(value: response, httpResponse: httpResponse, requestString: "\(method.rawValue) \(path)")
+        
+        let requestString = "\(method.rawValue) \(path)"
+        let requestSignature = "sig"+requestString
+        
+        let result = MercurySuccess(
+            value: response,
+            httpResponse: httpResponse,
+            requestString: requestString,
+            requestSignature: requestSignature
+        )
         let stub = StubbedResponse(result: .success(result), delay: delay)
         lock.withLock { stubs[stubKey(method: method, path: path)] = stub }
     }
@@ -71,7 +80,15 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
         decodeTo: T.Type,
         delay: TimeInterval = 0
     ) {
-        let failure = MercuryFailure(error: error, requestString: "\(method.rawValue) \(path)")
+        
+        let requestString = "\(method.rawValue) \(path)"
+        let requestSignature = "sig"+requestString
+        
+        let failure = MercuryFailure(
+            error: error,
+            requestString: "\(method.rawValue) \(path)",
+            requestSignature: requestSignature
+        )
         let stub = StubbedResponse<T>(result: .failure(failure), delay: delay)
         lock.withLock { stubs[stubKey(method: method, path: path)] = stub }
     }
@@ -179,8 +196,16 @@ public final class MockMercury: MercuryProtocol, @unchecked Sendable {
             try? await Task.sleep(nanoseconds: UInt64(stub.delay * 1_000_000_000))
             return stub.result
         }
+        
+        let requestString = "\(method.rawValue) \(path)"
+        let requestSignature = "sig"+requestString
+        
         if let stub { return stub.result }
-        let failure = MercuryFailure(error: .invalidURL, requestString: "\(method.rawValue) \(path)")
+        let failure = MercuryFailure(
+            error: .invalidURL,
+            requestString: requestString,
+            requestSignature: requestSignature
+        )
         return .failure(failure)
     }
 

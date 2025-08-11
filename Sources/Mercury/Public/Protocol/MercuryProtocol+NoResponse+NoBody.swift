@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension MercuryProtocol {
+public extension MercuryProtocol {
     
     /// Sends a `GET` request without a body or expected response type.
     ///

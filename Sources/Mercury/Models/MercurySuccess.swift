@@ -21,24 +21,18 @@ public struct MercurySuccess<Data: Decodable> {
     public let requestString: String
 
     /// A unique signature representing the request (useful for caching, debugging, etc).
-    public var requestSignature: String {
-        guard !requestString.isEmpty else {
-            return ""
-        }
-        
-        let data = Foundation.Data(requestString.utf8)
-        let hash = SHA256.hash(data: data)
-        return hash.map { String(format: "%02x", $0) }.joined()
-    }
+    public var requestSignature: String
     
     public init(
         value: Data,
         httpResponse: HTTPURLResponse,
-        requestString: String
+        requestString: String,
+        requestSignature: String
     ) {
         self.data = value
         self.httpResponse = httpResponse
         self.requestString = requestString
+        self.requestSignature = requestSignature
     }
 }
 

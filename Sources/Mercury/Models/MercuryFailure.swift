@@ -21,24 +21,18 @@ public struct MercuryFailure: Error, CustomStringConvertible {
     public let requestString: String
 
     /// A unique signature representing the request (useful for caching, debugging, etc).
-    public var requestSignature: String {
-        guard !requestString.isEmpty else {
-            return ""
-        }
-        
-        let data = Data(requestString.utf8)
-        let hash = SHA256.hash(data: data)
-        return hash.map { String(format: "%02x", $0) }.joined()
-    }
+    public var requestSignature: String
 
     public init(
         error: MercuryError,
         httpResponse: HTTPURLResponse? = nil,
-        requestString: String
+        requestString: String,
+        requestSignature: String
     ) {
         self.error = error
         self.httpResponse = httpResponse
         self.requestString = requestString
+        self.requestSignature = requestSignature
     }
 
     /// A textual description of the failure, delegating to the underlying `MercuryError`.
