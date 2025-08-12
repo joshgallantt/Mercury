@@ -348,5 +348,63 @@ final class MercuryTests: XCTestCase {
         XCTAssertNotNil(mercuryShared)
         XCTAssertNotNil(mercuryIsolated)
     }
+    
+    func test_mergeHeaders_coversAllCases() {
+        // Given
+        let session = MockMercurySession(scenario: .error(NSError(domain: "x", code: 0)))
+        let defaultHeaders = [
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Custom-Header": "defaultValue"
+        ]
+        let client = Mercury(
+            host: "https://host.com",
+            port: nil,
+            session: session,
+            defaultHeaders: defaultHeaders
+        )
+        
+        // 1. Merging nil returns defaults
+        let mergedNil = client.mergeHeaders(nil)
+        XCTAssertEqual(mergedNil.count, defaultHeaders.count, "Merging nil should return default headers count")
+        for (key, value) in defaultHeaders {
+            XCTAssertEqual(mergedNil[key], value, "Merging nil should keep default header for \(key)")
+        }
+        
+        // 2. Custom header same key different value overrides, casing preserved
+        let customSameKey = ["Accept": "text/plain"]
+        let mergedSameKey = client.mergeHeaders(customSameKey)
+        XCTAssertEqual(mergedSameKey.count, defaultHeaders.count, "Count should remain same after overriding existing key")
+        XCTAssertEqual(mergedSameKey["Accept"], "text/plain", "Value should be overridden for 'Accept'")
+        XCTAssertTrue(mergedSameKey.keys.contains("Accept"), "Key casing should remain 'Accept'")
+        
+        // 3. Custom header with a new key is added, casing preserved
+        let customNewKey = ["New-Header": "newValue"]
+        let mergedNewKey = client.mergeHeaders(customNewKey)
+        XCTAssertEqual(mergedNewKey.count, defaultHeaders.count + 1, "Count should increase by one after adding new header")
+        XCTAssertEqual(mergedNewKey["New-Header"], "newValue", "New header value should be present")
+        XCTAssertTrue(mergedNewKey.keys.contains("New-Header"), "New header casing should be preserved")
+        
+        // 4. Custom header uses different casing for existing key, value overridden but default casing remains
+        let customDifferentCasing = ["content-type": "text/html"]
+        let mergedDifferentCasing = client.mergeHeaders(customDifferentCasing)
+        XCTAssertEqual(mergedDifferentCasing.count, defaultHeaders.count, "Count should remain same when overriding existing key with different casing")
+        XCTAssertEqual(mergedDifferentCasing["Content-Type"], "text/html", "Value should be overridden for 'Content-Type'")
+        XCTAssertFalse(mergedDifferentCasing.keys.contains("content-type"), "Key casing should remain 'Content-Type' not 'content-type'")
+        
+        // 5. Custom header with new key with new casing preserved
+        let customNewKeyCasing = ["X-New-Header": "newValue2"]
+        let mergedNewKeyCasing = client.mergeHeaders(customNewKeyCasing)
+        XCTAssertEqual(mergedNewKeyCasing.count, defaultHeaders.count + 1, "Count should increase by one when adding new key with new casing")
+        XCTAssertEqual(mergedNewKeyCasing["X-New-Header"], "newValue2", "New header with new casing value should be present")
+        XCTAssertTrue(mergedNewKeyCasing.keys.contains("X-New-Header"), "New header casing should be preserved")
+        
+        // 6. Merging empty dictionary returns defaults
+        let mergedEmpty = client.mergeHeaders([:])
+        XCTAssertEqual(mergedEmpty.count, defaultHeaders.count, "Merging empty dictionary should return default headers count")
+        for (key, value) in defaultHeaders {
+            XCTAssertEqual(mergedEmpty[key], value, "Merging empty dictionary should keep default header for \(key)")
+        }
+    }
 
 }

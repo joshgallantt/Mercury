@@ -336,19 +336,26 @@ public struct Mercury: MercuryProtocol {
     /// Merges custom headers with default headers, preserving custom header casing
     internal func mergeHeaders(_ customHeaders: [String: String]?) -> [String: String] {
         var merged = [String: (originalKey: String, value: String)]()
-        
+
         // Add defaults with their original casing
         for (key, value) in defaultHeaders {
             merged[key.lowercased()] = (key, value)
         }
-        
-        // Override with custom headers, preserving their casing
+
+        // Override with custom headers:
         if let customHeaders = customHeaders {
-            for (key, value) in customHeaders {
-                merged[key.lowercased()] = (key, value)
+            for (customKey, customValue) in customHeaders {
+                let lower = customKey.lowercased()
+                if let existing = merged[lower] {
+                    // Key exists in defaults: override value, keep default casing
+                    merged[lower] = (existing.originalKey, customValue)
+                } else {
+                    // New header: use custom casing
+                    merged[lower] = (customKey, customValue)
+                }
             }
         }
-        
+
         // Return dictionary with preserved casing
         return Dictionary(uniqueKeysWithValues: merged.values.map { ($0.originalKey, $0.value) })
     }

@@ -5,7 +5,6 @@
 //  Created by Josh Gallant on 14/07/2025.
 //
 
-
 import Foundation
 
 /// `MercuryProtocol`

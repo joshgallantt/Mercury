@@ -5,7 +5,6 @@
 //  Created by Josh Gallant on 06/08/2025.
 //
 
-
 import Foundation
 
 public extension MercuryProtocol {

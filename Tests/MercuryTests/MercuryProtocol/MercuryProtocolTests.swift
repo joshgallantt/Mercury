@@ -279,5 +279,41 @@ final class MercuryProtocolTests: XCTestCase {
             }
         }
     }
+
+    func test_get_returnsRawData_whenDecodeToDataSelf() async {
+        // Given
+        let expectedData = "Hello, Mercury!".data(using: .utf8)!
+        mock.stubGet(path: "/data", response: expectedData)
+        let mercury: MercuryProtocol = mock
+
+        // When
+        let result = await mercury.get(path: "/data", decodeTo: Data.self)
+
+        // Then
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.data, expectedData)
+        default:
+            XCTFail("Expected Data success")
+        }
+    }
+
+    func test_get_returnsRawString_whenDecodeToStringSelf() async {
+        // Given
+        let expectedString = "Hello, world!"
+        mock.stubGet(path: "/string", response: expectedString)
+        let mercury: MercuryProtocol = mock
+
+        // When
+        let result = await mercury.get(path: "/string", decodeTo: String.self)
+
+        // Then
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.data, expectedString)
+        default:
+            XCTFail("Expected String success")
+        }
+    }
 }
 
