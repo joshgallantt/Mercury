@@ -116,16 +116,3 @@ public struct MercuryRequest {
         return components.joined(separator: "|")
     }
 }
-
-/// Type-erased Encodable wrapper
-private struct AnyEncodable: Encodable {
-    private let encodeFunc: (Encoder) throws -> Void
-    
-    init<T: Encodable>(_ value: T) {
-        self.encodeFunc = value.encode
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        try encodeFunc(encoder)
-    }
-}
