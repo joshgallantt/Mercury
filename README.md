@@ -11,7 +11,7 @@
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg?style=flat)](https://swift.org)
 [![SPM ready](https://img.shields.io/badge/SPM-ready-brightgreen.svg?style=flat-square)](https://swift.org/package-manager/)
-[![Coverage](https://img.shields.io/badge/Coverage-98.4%25-brightgreen.svg?style=flat)](#)
+[![Coverage](https://img.shields.io/badge/Coverage-97%25-brightgreen.svg?style=flat)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Size](https://img.shields.io/badge/Package_Size-2.0MB-purple.svg?style=flat-square)](#)
 
@@ -25,11 +25,10 @@ An easy to use HTTP networking library for Swift with built-in JSON encoding/dec
 2. [Installation](#installation)
 3. [Quick Start](#quick-start)
 4. [Advanced](#advanced)
-5. [Responses](#responses)
-6. [Cache Management](#cache-management)
-7. [Error Handling](#error-handling)
-8. [Testing](#testing)
-9. [License](#license)
+5. [Cache Management](#cache-management)
+6. [Error Handling](#error-handling)
+7. [Testing](#testing)
+8. [License](#license)
 
 ## Features
 
