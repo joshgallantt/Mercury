@@ -8,6 +8,7 @@
 import Foundation
 
 public extension MercuryProtocol {
+    
     /// Sends a `POST` request without a body and decodes the response.
     ///
     /// - Parameters:

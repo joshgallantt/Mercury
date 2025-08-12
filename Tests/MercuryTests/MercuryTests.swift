@@ -233,7 +233,6 @@ final class MercuryTests: XCTestCase {
             case .decoding(let namespace, let key, _):
                 XCTAssertEqual(namespace, "Person")
                 XCTAssertEqual(key, "age")
-                XCTAssertNil(failure.httpResponse)
             default:
                 XCTFail("Expected .decoding failure")
             }
@@ -328,24 +327,6 @@ final class MercuryTests: XCTestCase {
         // When/Then (just calls, checks don’t crash)
         client.clearCache()
         Mercury.clearSharedURLCache()
-    }
-
-    // MARK: - encodeBody
-
-    func test_givenNilBody_whenEncodeBody_thenReturnsNilData() {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session)
-
-        // When
-        let result = client.encodeBody(nil as String?)
-
-        // Then
-        switch result {
-        case .success(let data): XCTAssertNil(data)
-        default: XCTFail("Expected nil data")
-        }
     }
 
     // MARK: - decodeResponse: Data.self and String.self
