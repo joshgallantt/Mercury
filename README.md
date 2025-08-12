@@ -216,51 +216,6 @@ let result = await client.get(
 )
 ```
 
-## Responses
-
-Each request returns a `Result` with:
-
-* `MercurySuccess<T>` on success
-* `MercuryFailure` on failure
-
-**On success:**
-
-```swift
-case .success(let success):
-    let data = success.data
-    let httpResponse = success.httpResponse
-    let requestString = success.requestString
-    let signature = success.requestSignature
-
-    print("Status Code: \(httpResponse.statusCode)")
-    // Status Code: 200
-
-    print("Headers: \(httpResponse.allHeaderFields)")
-    // Headers: ["Content-Type": "application/json", "X-Request-ID": "abcd-efgh"]
-
-    print("Request String: \(requestString)")
-    // Request String: GET|https://api.example.com/v1/users/123|headers:accept:application/json&content-type:application/json
-
-    print("Request Signature: \(signature)")
-    // Request Signature: 2ca7f2481a7d7d4e31ad24bb3fbb13d79e531c55a5a44af8a1b7d1c8f2a3ea8a
-```
-
-**On failure:**
-
-```swift
-case .failure(let failure):
-    print("Error: \(failure)")
-    // Console: Error: 404 Not Found
-
-    print("Request String: \(failure.requestString)")
-    // Request String: GET|https://api.example.com/v1/users/999|headers:accept:application/json&content-type:application/json
-
-    print("Request Signature: \(failure.requestSignature)")
-    // Request Signature: 6d967252b5e347e612fb7caa0cbe0b6318d07db96902d2a2b7e1f804012debc2
-```
-> [!TIP]
-> Request signatures are deterministic SHA256 hashes, great for debugging, caching, and logging.
-
 ## Cache Management
 
 Mercury supports two caching strategies:
