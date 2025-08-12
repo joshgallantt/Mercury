@@ -449,7 +449,15 @@ public struct Mercury: MercuryProtocol {
         )
         urlRequest.httpMethod = request.method.rawValue
         urlRequest.allHTTPHeaderFields = request.headers
-        urlRequest.httpBody = request.body
+        
+        if let body = request.body, request.method != .GET {
+            do {
+                let data = try encodeBody(body)
+                urlRequest.httpBody = data
+            } catch {
+                return .failure(.encoding(error))
+            }
+        }
         
         return .success(urlRequest)
     }

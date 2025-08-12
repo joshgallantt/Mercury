@@ -5,7 +5,6 @@
 //  Created by Josh Gallant on 12/08/2025.
 //
 
-
 import Foundation
 import CryptoKit
 
@@ -18,7 +17,7 @@ public struct MercuryRequest {
     public let headers: [String: String]
     public let query: [String: String]?
     public let fragment: String?
-    public let body: Data?
+    public let body: Encodable?
     public let cachePolicy: URLRequest.CachePolicy
     
     /// The canonical string representation of this request
@@ -40,7 +39,7 @@ public struct MercuryRequest {
         headers: [String: String],
         query: [String: String]?,
         fragment: String?,
-        body: Data?,
+        body: Encodable?,
         cachePolicy: URLRequest.CachePolicy
     ) {
         self.method = method
@@ -77,7 +76,7 @@ public struct MercuryRequest {
         headers: [String: String],
         query: [String: String]?,
         fragment: String?,
-        body: Data?
+        body: Encodable?
     ) -> String {
         var components: [String] = []
         
@@ -115,5 +114,18 @@ public struct MercuryRequest {
         }
         
         return components.joined(separator: "|")
+    }
+}
+
+/// Type-erased Encodable wrapper
+private struct AnyEncodable: Encodable {
+    private let encodeFunc: (Encoder) throws -> Void
+    
+    init<T: Encodable>(_ value: T) {
+        self.encodeFunc = value.encode
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        try encodeFunc(encoder)
     }
 }
