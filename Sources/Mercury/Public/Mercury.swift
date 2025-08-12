@@ -413,7 +413,7 @@ public struct Mercury: MercuryProtocol {
     // MARK: - Private Helpers
     
     /// Unified method for performing requests through build -> execute pipeline
-    private func performRequest<Body: Encodable, Response: Decodable>(
+    internal func performRequest<Body: Encodable, Response: Decodable>(
         method: MercuryMethod,
         path: String,
         body: Body?,
@@ -482,7 +482,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Merges custom headers with default headers, preserving custom header casing
-    private func mergeHeaders(_ customHeaders: [String: String]?) -> [String: String] {
+    internal func mergeHeaders(_ customHeaders: [String: String]?) -> [String: String] {
         var merged = [String: (originalKey: String, value: String)]()
         
         // Add defaults with their original casing
@@ -502,7 +502,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Builds a URLRequest from a MercuryRequest
-    private func buildURLRequest(from request: MercuryRequest) -> Result<URLRequest, MercuryError> {
+    internal func buildURLRequest(from request: MercuryRequest) -> Result<URLRequest, MercuryError> {
         var components = URLComponents()
         components.scheme = request.scheme
         components.host = request.host
@@ -528,7 +528,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Executes URLRequest and decodes the response
-    private func executeAndDecode<Response: Decodable>(
+    internal func executeAndDecode<Response: Decodable>(
         _ urlRequest: URLRequest,
         decodeTo: Response.Type,
         requestString: String,
@@ -560,7 +560,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Executes the network request via URLSession
-    private func executeNetworkRequest(_ request: URLRequest) async -> Result<(Data, HTTPURLResponse), MercuryError> {
+    internal func executeNetworkRequest(_ request: URLRequest) async -> Result<(Data, HTTPURLResponse), MercuryError> {
         do {
             let (data, response) = try await session.data(for: request)
             
@@ -575,7 +575,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Processes the HTTP response and checks status code
-    private func processResponse<Response: Decodable>(
+    internal func processResponse<Response: Decodable>(
         data: Data,
         httpResponse: HTTPURLResponse,
         decodeTo: Response.Type,
@@ -607,7 +607,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Decodes the response data into the expected type
-    private func decodeResponse<Response: Decodable>(
+    internal func decodeResponse<Response: Decodable>(
         data: Data,
         httpResponse: HTTPURLResponse,
         decodeTo: Response.Type,
@@ -669,7 +669,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Extracts the key path from a DecodingError for better error messages
-    private func extractKeyPath<Response: Decodable>(
+    internal func extractKeyPath<Response: Decodable>(
         from error: Error,
         for type: Response.Type
     ) -> String {
@@ -690,7 +690,7 @@ public struct Mercury: MercuryProtocol {
     }
     
     /// Builds a dot-notation key path from CodingKey array
-    private func buildKeyPath(_ path: [CodingKey]) -> String {
+    internal func buildKeyPath(_ path: [CodingKey]) -> String {
         guard !path.isEmpty else { return "root" }
         return path.map { $0.stringValue }.joined(separator: ".")
     }

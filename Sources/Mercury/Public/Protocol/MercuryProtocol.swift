@@ -5,8 +5,8 @@
 //  Created by Josh Gallant on 14/07/2025.
 //
 
-import Foundation
 
+import Foundation
 
 /// `MercuryProtocol`
 /// - Automatically encodes a request body (`Encodable`) if present
