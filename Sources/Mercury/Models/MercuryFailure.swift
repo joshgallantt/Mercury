@@ -16,23 +16,13 @@ public struct MercuryFailure: Error, CustomStringConvertible {
 
     /// The raw HTTP response metadata, if one was provided.
     public var httpResponse: HTTPURLResponse? = nil
-    
-    /// A  string representing the request
-    public let requestString: String
-
-    /// A unique signature representing the request (useful for caching, debugging, etc).
-    public var requestSignature: String
 
     public init(
         error: MercuryError,
-        httpResponse: HTTPURLResponse? = nil,
-        requestString: String,
-        requestSignature: String
+        httpResponse: HTTPURLResponse? = nil
     ) {
         self.error = error
         self.httpResponse = httpResponse
-        self.requestString = requestString
-        self.requestSignature = requestSignature
     }
 
     /// A textual description of the failure, delegating to the underlying `MercuryError`.

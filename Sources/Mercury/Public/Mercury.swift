@@ -132,179 +132,90 @@ public struct Mercury: MercuryProtocol {
         urlCache?.removeAllCachedResponses()
     }
     
-    // MARK: - Public API - Request Building
-    
-    /// Builds a MercuryRequest for any HTTP method
-    public func buildRequest<Body: Encodable>(
-        method: MercuryMethod,
-        path: String,
-        body: Body? = nil,
-        headers: [String: String]? = nil,
-        query: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) throws -> MercuryRequest {
-        let bodyData = try encodeBody(body)
-        let finalHeaders = mergeHeaders(headers)
-        let fullPath = buildFullPath(path)
-        
-        return MercuryRequest(
-            method: method,
-            scheme: scheme,
-            host: host,
-            port: port,
-            path: fullPath,
-            headers: finalHeaders,
-            query: query,
-            fragment: fragment,
-            body: bodyData,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
-        )
-    }
-    
-    /// Convenience builder for GET requests
-    public func buildGet(
-        path: String,
-        headers: [String: String]? = nil,
-        query: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) throws -> MercuryRequest {
-        try buildRequest(
-            method: .GET,
-            path: path,
-            body: nil as MercuryEmptyBody?,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy
-        )
-    }
-    
-    /// Convenience builder for POST requests
-    public func buildPost<Body: Encodable>(
-        path: String,
-        body: Body? = nil,
-        headers: [String: String]? = nil,
-        query: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) throws -> MercuryRequest {
-        try buildRequest(
-            method: .POST,
-            path: path,
-            body: body,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy
-        )
-    }
-    
-    /// Convenience builder for PUT requests
-    public func buildPut<Body: Encodable>(
-        path: String,
-        body: Body? = nil,
-        headers: [String: String]? = nil,
-        query: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) throws -> MercuryRequest {
-        try buildRequest(
-            method: .PUT,
-            path: path,
-            body: body,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy
-        )
-    }
-    
-    /// Convenience builder for PATCH requests
-    public func buildPatch<Body: Encodable>(
-        path: String,
-        body: Body? = nil,
-        headers: [String: String]? = nil,
-        query: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) throws -> MercuryRequest {
-        try buildRequest(
-            method: .PATCH,
-            path: path,
-            body: body,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy
-        )
-    }
-    
-    /// Convenience builder for DELETE requests
-    public func buildDelete<Body: Encodable>(
-        path: String,
-        body: Body? = nil,
-        headers: [String: String]? = nil,
-        query: [String: String]? = nil,
-        fragment: String? = nil,
-        cachePolicy: URLRequest.CachePolicy? = nil
-    ) throws -> MercuryRequest {
-        try buildRequest(
-            method: .DELETE,
-            path: path,
-            body: body,
-            headers: headers,
-            query: query,
-            fragment: fragment,
-            cachePolicy: cachePolicy
-        )
-    }
-    
     // MARK: - Public API - Request Execution
     
-    /// Executes a pre-built MercuryRequest and decodes the response
+    /// Executes a pre-built MercuryRequest and decodes the response.
+    ///
+    /// This allows for advanced use cases where you want to build a request separately
+    /// from executing it, such as for request modification, logging, or caching strategies.
+    ///
+    /// - Parameters:
+    ///   - request: The `MercuryRequest` to execute.
+    ///   - decodeTo: The expected `Decodable` response type.
+    ///
+    /// - Returns: A result containing the decoded response and metadata, or a failure.
+    ///
+    /// Example:
+    /// ```swift
+    /// let request = MercuryRequest(
+    ///     method: .GET,
+    ///     scheme: "https",
+    ///     host: "api.example.com",
+    ///     port: nil,
+    ///     path: "/users",
+    ///     headers: ["Authorization": "Bearer token"],
+    ///     query: ["page": "1"],
+    ///     fragment: nil,
+    ///     body: nil,
+    ///     cachePolicy: .useProtocolCachePolicy
+    /// )
+    /// let result = await client.execute(request, decodeTo: [User].self)
+    /// ```
     public func execute<Response: Decodable>(
         _ request: MercuryRequest,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         // Validate request
         guard !request.host.isEmpty else {
-            return .failure(MercuryFailure(
-                error: .invalidURL,
-                requestString: request.string,
-                requestSignature: request.signature
-            ))
+            return .failure(MercuryFailure(error: .invalidURL))
         }
         
         // Build URLRequest
         let urlRequestResult = buildURLRequest(from: request)
         switch urlRequestResult {
         case .failure(let error):
-            return .failure(MercuryFailure(
-                error: error,
-                requestString: request.string,
-                requestSignature: request.signature
-            ))
+            return .failure(MercuryFailure(error: error))
         case .success(let urlRequest):
             // Execute and decode
-            return await executeAndDecode(
-                urlRequest,
-                decodeTo: decodeTo,
-                requestString: request.string,
-                requestSignature: request.signature
-            )
+            return await executeAndDecode(urlRequest, decodeTo: decodeTo)
         }
     }
     
-    /// Executes a pre-built MercuryRequest returning raw Data
+    /// Executes a pre-built MercuryRequest returning raw Data.
+    ///
+    /// This is useful when you need the raw response data without decoding,
+    /// such as for binary data or when you want to handle decoding manually.
+    ///
+    /// - Parameter request: The `MercuryRequest` to execute.
+    ///
+    /// - Returns: A result containing raw data and metadata, or a failure.
+    ///
+    /// Example:
+    /// ```swift
+    /// let request = MercuryRequest(
+    ///     method: .GET,
+    ///     scheme: "https",
+    ///     host: "api.example.com",
+    ///     port: nil,
+    ///     path: "/image.png",
+    ///     headers: [:],
+    ///     query: nil,
+    ///     fragment: nil,
+    ///     body: nil,
+    ///     cachePolicy: .useProtocolCachePolicy
+    /// )
+    /// let result = await client.execute(request)
+    /// if case .success(let response) = result {
+    ///     let imageData = response.data
+    /// }
+    /// ```
     public func execute(
         _ request: MercuryRequest
     ) async -> Result<MercurySuccess<Data>, MercuryFailure> {
         await execute(request, decodeTo: Data.self)
     }
     
-    // MARK: - Protocol Implementation (Convenience Methods)
+    // MARK: - Protocol Implementation
     
     public func get<Response: Decodable>(
         path: String,
@@ -410,10 +321,10 @@ public struct Mercury: MercuryProtocol {
         )
     }
     
-    // MARK: - Private Helpers
+    // MARK: - Private Implementation
     
-    /// Unified method for performing requests through build -> execute pipeline
-    internal func performRequest<Body: Encodable, Response: Decodable>(
+    /// Unified method for performing all HTTP requests
+    private func performRequest<Body: Encodable, Response: Decodable>(
         method: MercuryMethod,
         path: String,
         body: Body?,
@@ -423,32 +334,48 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy?,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
+        // Build request components
+        let bodyData: Data?
         do {
-            let request = try buildRequest(
-                method: method,
-                path: path,
-                body: body,
-                headers: headers,
-                query: query,
-                fragment: fragment,
-                cachePolicy: cachePolicy
-            )
-            return await execute(request, decodeTo: decodeTo)
+            bodyData = try encodeBody(body)
         } catch let error as MercuryError {
-            return .failure(
-                MercuryFailure(
-                    error: error,
-                    requestString: "\(method.rawValue) \(path)",
-                    requestSignature: ""
-                )
-            )
+            return .failure(MercuryFailure(error: error))
         } catch {
-            return .failure(
-                MercuryFailure(
-                    error: .transport(error),
-                    requestString: "\(method.rawValue) \(path)",
-                    requestSignature: ""
-                )
+            return .failure(MercuryFailure(error: .transport(error)))
+        }
+        
+        let finalHeaders = mergeHeaders(headers)
+        let fullPath = buildFullPath(path)
+        
+        // Create MercuryRequest
+        let request = MercuryRequest(
+            method: method,
+            scheme: scheme,
+            host: host,
+            port: port,
+            path: fullPath,
+            headers: finalHeaders,
+            query: query,
+            fragment: fragment,
+            body: bodyData,
+            cachePolicy: cachePolicy ?? defaultCachePolicy
+        )
+        
+        // Validate request
+        guard !host.isEmpty else {
+            return .failure(MercuryFailure(error: .invalidURL))
+        }
+        
+        // Build URLRequest
+        let urlRequestResult = buildURLRequest(from: request)
+        switch urlRequestResult {
+        case .failure(let error):
+            return .failure(MercuryFailure(error: error))
+        case .success(let urlRequest):
+            // Execute and decode
+            return await executeAndDecode(
+                urlRequest,
+                decodeTo: decodeTo
             )
         }
     }
@@ -530,9 +457,7 @@ public struct Mercury: MercuryProtocol {
     /// Executes URLRequest and decodes the response
     internal func executeAndDecode<Response: Decodable>(
         _ urlRequest: URLRequest,
-        decodeTo: Response.Type,
-        requestString: String,
-        requestSignature: String
+        decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
         // Execute network request
         let networkResult = await executeNetworkRequest(urlRequest)
@@ -540,21 +465,13 @@ public struct Mercury: MercuryProtocol {
         // Process and decode response
         switch networkResult {
         case .failure(let error):
-            return .failure(
-                MercuryFailure(
-                    error: error,
-                    requestString: requestString,
-                    requestSignature: requestSignature
-                )
-            )
+            return .failure(MercuryFailure(error: error))
             
         case .success(let (data, httpResponse)):
             return processResponse(
                 data: data,
                 httpResponse: httpResponse,
-                decodeTo: decodeTo,
-                requestString: requestString,
-                requestSignature: requestSignature
+                decodeTo: decodeTo
             )
         }
     }
@@ -578,9 +495,7 @@ public struct Mercury: MercuryProtocol {
     internal func processResponse<Response: Decodable>(
         data: Data,
         httpResponse: HTTPURLResponse,
-        decodeTo: Response.Type,
-        requestString: String,
-        requestSignature: String
+        decodeTo: Response.Type
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         
         guard (200...299).contains(httpResponse.statusCode) else {
@@ -590,9 +505,7 @@ public struct Mercury: MercuryProtocol {
                         statusCode: httpResponse.statusCode,
                         data: data
                     ),
-                    httpResponse: httpResponse,
-                    requestString: requestString,
-                    requestSignature: requestSignature
+                    httpResponse: httpResponse
                 )
             )
         }
@@ -600,9 +513,7 @@ public struct Mercury: MercuryProtocol {
         return decodeResponse(
             data: data,
             httpResponse: httpResponse,
-            decodeTo: decodeTo,
-            requestString: requestString,
-            requestSignature: requestSignature
+            decodeTo: decodeTo
         )
     }
     
@@ -610,9 +521,7 @@ public struct Mercury: MercuryProtocol {
     internal func decodeResponse<Response: Decodable>(
         data: Data,
         httpResponse: HTTPURLResponse,
-        decodeTo: Response.Type,
-        requestString: String,
-        requestSignature: String
+        decodeTo: Response.Type
     ) -> Result<MercurySuccess<Response>, MercuryFailure> {
         do {
             let decoded: Response
@@ -646,9 +555,7 @@ public struct Mercury: MercuryProtocol {
             return .success(
                 MercurySuccess(
                     value: decoded,
-                    httpResponse: httpResponse,
-                    requestString: requestString,
-                    requestSignature: requestSignature
+                    httpResponse: httpResponse
                 )
             )
         } catch {
@@ -660,9 +567,7 @@ public struct Mercury: MercuryProtocol {
                         key: keyPath,
                         underlyingError: error
                     ),
-                    httpResponse: httpResponse,
-                    requestString: requestString,
-                    requestSignature: requestSignature
+                    httpResponse: httpResponse
                 )
             )
         }

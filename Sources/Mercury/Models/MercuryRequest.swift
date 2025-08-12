@@ -2,7 +2,7 @@
 //  MercuryRequest.swift
 //  Mercury
 //
-//  Created by Josh Gallant on 11/08/2025.
+//  Created by Josh Gallant on 12/08/2025.
 //
 
 
@@ -25,15 +25,10 @@ public struct MercuryRequest {
     public let string: String
     
     /// The SHA256 hash of the canonical string (useful for caching)
-    public var signature: String {
+    public var hash: String {
         let data = Data(string.utf8)
         let hash = SHA256.hash(data: data)
         return hash.map { String(format: "%02x", $0) }.joined()
-    }
-    
-    /// Alias for signature
-    public var hash: String {
-        signature
     }
     
     public init(

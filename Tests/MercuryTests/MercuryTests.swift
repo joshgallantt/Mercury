@@ -61,7 +61,6 @@ final class MercuryTests: XCTestCase {
         case .success(let success):
             XCTAssertEqual(success.data, "success")
             XCTAssertEqual(success.httpResponse.statusCode, 200)
-            XCTAssertFalse(success.requestSignature.isEmpty)
         case .failure:
             XCTFail("Expected success")
         }
@@ -83,7 +82,6 @@ final class MercuryTests: XCTestCase {
         case .success(let success):
             XCTAssertEqual(success.data, body)
             XCTAssertEqual(success.httpResponse.statusCode, 201)
-            XCTAssertFalse(success.requestSignature.isEmpty)
         case .failure:
             XCTFail("Expected success")
         }
@@ -153,8 +151,6 @@ final class MercuryTests: XCTestCase {
         case .failure(let failure):
             switch failure.error {
             case .invalidURL:
-                XCTAssertEqual(failure.requestString, "GET|https:///path|headers:accept:application/json&content-type:application/json")
-                XCTAssertEqual(failure.requestSignature, "b0ea41d1f1f5224b8fe26204759668ad28e0f81fdb3d69c32da3a988f9fbd188")
                 XCTAssertNil(failure.httpResponse)
             default:
                 XCTFail("Expected .invalidURL failure")
@@ -260,51 +256,9 @@ final class MercuryTests: XCTestCase {
             switch call {
             case .success(let success):
                 XCTAssertEqual(success.data, response, "Failed for \(method)")
-                XCTAssertFalse(success.requestSignature.isEmpty, "Failed for \(method)")
             case .failure:
                 XCTFail("Expected success for \(method)")
             }
-        }
-    }
-
-    // MARK: - Request Building Tests
-
-    func test_givenDifferentRequests_whenCalled_thenSignaturesDiffer() async {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session)
-
-        // When
-        let result1 = await client.get(path: "/a", headers: ["X": "1"], decodeTo: Data.self)
-        let result2 = await client.get(path: "/b", headers: ["X": "2"], decodeTo: Data.self)
-
-        // Then
-        var sig1 = "", sig2 = ""
-        if case .success(let success) = result1 { sig1 = success.requestSignature }
-        if case .success(let success) = result2 { sig2 = success.requestSignature }
-        XCTAssertNotEqual(sig1, sig2)
-    }
-
-    func test_givenRequest_whenBuilt_thenCanonicalStringIsCorrect() async {
-        // Given
-        let (data, response) = makeMockResponse()
-        let session = MockMercurySession(scenario: .success(data, response))
-        let client = makeClient(session: session)
-        
-        // When
-        let result = await client.get(
-            path: "/users/123",
-            headers: ["Accept": "application/json"],
-            decodeTo: Data.self
-        )
-        
-        // Then
-        if case .success(let success) = result {
-            let expected = "GET|https://host.com/users/123|headers:accept:application/json&content-type:application/json"
-            XCTAssertEqual(success.requestString, expected)
-        } else {
-            XCTFail("Expected success")
         }
     }
     
