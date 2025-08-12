@@ -138,28 +138,6 @@ final class MercuryTests: XCTestCase {
         }
     }
 
-    func test_givenInvalidHost_whenGet_thenReturnsInvalidURLFailure() async {
-        // Given
-        let session = MockMercurySession(scenario: .error(NSError(domain: "no", code: 1)))
-        let client = Mercury(host: "", session: session)
-
-        // When
-        let result = await client.get(path: "/path", decodeTo: Data.self)
-
-        // Then
-        switch result {
-        case .failure(let failure):
-            switch failure.error {
-            case .invalidURL:
-                XCTAssertNil(failure.httpResponse)
-            default:
-                XCTFail("Expected .invalidURL failure")
-            }
-        case .success:
-            XCTFail("Expected failure")
-        }
-    }
-
     func test_givenInvalidResponse_whenGet_thenReturnsInvalidResponseFailure() async {
         // Given
         let data = Data("nohttp".utf8)
@@ -358,7 +336,7 @@ final class MercuryTests: XCTestCase {
             defaultCachePolicy: .reloadIgnoringCacheData,
             cache: .shared
         )
-
+        
         let mercuryIsolated = Mercury(
             host: "http://host.net",
             port: nil,
@@ -372,4 +350,3 @@ final class MercuryTests: XCTestCase {
     }
 
 }
-

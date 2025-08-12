@@ -132,89 +132,6 @@ public struct Mercury: MercuryProtocol {
         urlCache?.removeAllCachedResponses()
     }
     
-    // MARK: - Public API - Request Execution
-    
-    /// Executes a pre-built MercuryRequest and decodes the response.
-    ///
-    /// This allows for advanced use cases where you want to build a request separately
-    /// from executing it, such as for request modification, logging, or caching strategies.
-    ///
-    /// - Parameters:
-    ///   - request: The `MercuryRequest` to execute.
-    ///   - decodeTo: The expected `Decodable` response type.
-    ///
-    /// - Returns: A result containing the decoded response and metadata, or a failure.
-    ///
-    /// Example:
-    /// ```swift
-    /// let request = MercuryRequest(
-    ///     method: .GET,
-    ///     scheme: "https",
-    ///     host: "api.example.com",
-    ///     port: nil,
-    ///     path: "/users",
-    ///     headers: ["Authorization": "Bearer token"],
-    ///     query: ["page": "1"],
-    ///     fragment: nil,
-    ///     body: nil,
-    ///     cachePolicy: .useProtocolCachePolicy
-    /// )
-    /// let result = await client.execute(request, decodeTo: [User].self)
-    /// ```
-    public func execute<Response: Decodable>(
-        _ request: MercuryRequest,
-        decodeTo: Response.Type
-    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        // Validate request
-        guard !request.host.isEmpty else {
-            return .failure(MercuryFailure(error: .invalidURL))
-        }
-        
-        // Build URLRequest
-        let urlRequestResult = buildURLRequest(from: request)
-        switch urlRequestResult {
-        case .failure(let error):
-            return .failure(MercuryFailure(error: error))
-        case .success(let urlRequest):
-            // Execute and decode
-            return await executeAndDecode(urlRequest, decodeTo: decodeTo)
-        }
-    }
-    
-    /// Executes a pre-built MercuryRequest returning raw Data.
-    ///
-    /// This is useful when you need the raw response data without decoding,
-    /// such as for binary data or when you want to handle decoding manually.
-    ///
-    /// - Parameter request: The `MercuryRequest` to execute.
-    ///
-    /// - Returns: A result containing raw data and metadata, or a failure.
-    ///
-    /// Example:
-    /// ```swift
-    /// let request = MercuryRequest(
-    ///     method: .GET,
-    ///     scheme: "https",
-    ///     host: "api.example.com",
-    ///     port: nil,
-    ///     path: "/image.png",
-    ///     headers: [:],
-    ///     query: nil,
-    ///     fragment: nil,
-    ///     body: nil,
-    ///     cachePolicy: .useProtocolCachePolicy
-    /// )
-    /// let result = await client.execute(request)
-    /// if case .success(let response) = result {
-    ///     let imageData = response.data
-    /// }
-    /// ```
-    public func execute(
-        _ request: MercuryRequest
-    ) async -> Result<MercurySuccess<Data>, MercuryFailure> {
-        await execute(request, decodeTo: Data.self)
-    }
-    
     // MARK: - Protocol Implementation
     
     public func get<Response: Decodable>(
@@ -334,7 +251,7 @@ public struct Mercury: MercuryProtocol {
         cachePolicy: URLRequest.CachePolicy?,
         decodeTo: Response.Type
     ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        // Build request components
+        // Encode body
         let bodyData: Data?
         do {
             bodyData = try encodeBody(body)
@@ -347,34 +264,42 @@ public struct Mercury: MercuryProtocol {
         let finalHeaders = mergeHeaders(headers)
         let fullPath = buildFullPath(path)
         
-        // Create MercuryRequest
-        let request = MercuryRequest(
-            method: method,
-            scheme: scheme,
-            host: host,
-            port: port,
-            path: fullPath,
-            headers: finalHeaders,
-            query: query,
-            fragment: fragment,
-            body: bodyData,
-            cachePolicy: cachePolicy ?? defaultCachePolicy
-        )
+        // Build URLComponents
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = host
+        components.port = port
+        components.path = fullPath
+        components.queryItems = buildQueryItems(from: query)
+        components.fragment = fragment
         
-        // Validate request
-        guard !host.isEmpty else {
+        guard let url = components.url else {
             return .failure(MercuryFailure(error: .invalidURL))
         }
         
-        // Build URLRequest
-        let urlRequestResult = buildURLRequest(from: request)
-        switch urlRequestResult {
+        var urlRequest = URLRequest(
+            url: url,
+            cachePolicy: cachePolicy ?? defaultCachePolicy,
+            timeoutInterval: 60
+        )
+        urlRequest.httpMethod = method.rawValue
+        urlRequest.allHTTPHeaderFields = finalHeaders
+        if let bodyData = bodyData, method != .GET {
+            urlRequest.httpBody = bodyData
+        }
+        
+        // Execute network request
+        let networkResult = await executeNetworkRequest(urlRequest)
+        
+        // Process and decode response
+        switch networkResult {
         case .failure(let error):
             return .failure(MercuryFailure(error: error))
-        case .success(let urlRequest):
-            // Execute and decode
-            return await executeAndDecode(
-                urlRequest,
+            
+        case .success(let (data, httpResponse)):
+            return processResponse(
+                data: data,
+                httpResponse: httpResponse,
                 decodeTo: decodeTo
             )
         }
@@ -426,62 +351,6 @@ public struct Mercury: MercuryProtocol {
         
         // Return dictionary with preserved casing
         return Dictionary(uniqueKeysWithValues: merged.values.map { ($0.originalKey, $0.value) })
-    }
-    
-    /// Builds a URLRequest from a MercuryRequest
-    internal func buildURLRequest(from request: MercuryRequest) -> Result<URLRequest, MercuryError> {
-        var components = URLComponents()
-        components.scheme = request.scheme
-        components.host = request.host
-        components.port = request.port
-        components.path = request.path
-        components.queryItems = buildQueryItems(from: request.query)
-        components.fragment = request.fragment
-        
-        guard let url = components.url else {
-            return .failure(.invalidURL)
-        }
-        
-        var urlRequest = URLRequest(
-            url: url,
-            cachePolicy: request.cachePolicy,
-            timeoutInterval: 60
-        )
-        urlRequest.httpMethod = request.method.rawValue
-        urlRequest.allHTTPHeaderFields = request.headers
-        
-        if let body = request.body, request.method != .GET {
-            do {
-                let data = try encodeBody(body)
-                urlRequest.httpBody = data
-            } catch {
-                return .failure(.encoding(error))
-            }
-        }
-        
-        return .success(urlRequest)
-    }
-    
-    /// Executes URLRequest and decodes the response
-    internal func executeAndDecode<Response: Decodable>(
-        _ urlRequest: URLRequest,
-        decodeTo: Response.Type
-    ) async -> Result<MercurySuccess<Response>, MercuryFailure> {
-        // Execute network request
-        let networkResult = await executeNetworkRequest(urlRequest)
-        
-        // Process and decode response
-        switch networkResult {
-        case .failure(let error):
-            return .failure(MercuryFailure(error: error))
-            
-        case .success(let (data, httpResponse)):
-            return processResponse(
-                data: data,
-                httpResponse: httpResponse,
-                decodeTo: decodeTo
-            )
-        }
     }
     
     /// Executes the network request via URLSession
